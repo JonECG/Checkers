@@ -33,6 +33,9 @@ int main(int argc, char ** argv)
 				std::cout << "< " << std::to_string(coord.column) << ", " << std::to_string(coord.row) << " >; ";
 			}
 			std::cout << std::endl;
+
+			if (!board.attemptMove(move))
+				std::cout << "Invalid move" << std::endl;
 		}
 		catch (std::exception& e)
 		{

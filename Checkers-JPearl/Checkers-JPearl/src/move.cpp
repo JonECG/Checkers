@@ -77,6 +77,9 @@ namespace checkers
 		if (currentColumn != -1)
 			throw std::invalid_argument("Could not parse move. String ended unexpectedly");
 
+		if (result.numCoords_ < 2)
+			throw std::invalid_argument("Could not parse move. Move must contain at least two sets of coordinates");
+
 		return result;
 	}
 

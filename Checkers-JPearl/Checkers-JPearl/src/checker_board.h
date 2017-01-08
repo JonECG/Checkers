@@ -7,6 +7,7 @@
 namespace checkers
 {
 	class CheckerPiece;
+	class Move;
 
 	class CheckerBoard
 	{
@@ -32,6 +33,11 @@ namespace checkers
 
 		// Clears board state and resets pieces
 		void setupBoard();
+
+		bool isCoordValid(CompactCoordinate coord) const;
+
+		// Attempt the move and updates board state, and will not perform the move if it is not valid. Returns whether the move was successfully performed.
+		bool attemptMove(const Move& move);
 
 		// Returns the piece at the given coordinates. Returns null if no piece is there. Excepts on invalid coordinates such as trying to get the index for a coordinate that is between playable spaces.
 		CheckerPiece* getPiece(CompactCoordinate coord) const;
