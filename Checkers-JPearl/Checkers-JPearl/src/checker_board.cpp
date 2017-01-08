@@ -18,7 +18,7 @@ namespace checkers
 		if (coord.column & 1 ^ rowShifted)
 			return -1;
 
-		return coord.column / 2 + coord.row * kNumColumns;
+		return coord.column / 2 + coord.row * kNumActualColumns;
 	}
 
 	void CheckerBoard::initialize()
@@ -36,38 +36,46 @@ namespace checkers
 
 	void CheckerBoard::setupBoard()
 	{
-		int piecesPerPlayer = kNumPieces / 2;
-
 		// Team O
-		for (int i = 0; i < piecesPerPlayer; i++)
+		for (int i = 0; i < kNumPiecesPerPlayer; i++)
 		{
 			pieces_[i].setIsKing(false);
+			pieces_[i].setMark(0);
 			pieces_[i].setSide(PieceSide::O);
 			board_[i] = pieces_ + i;
 		}
 
 		// Clear middle rows
-		int startMiddleRowsIndex = kNumColumns * kNumRowsPerPlayer;
-		int endMiddleRowsIndex = kNumColumns * (kNumRows - kNumRowsPerPlayer);
+		int startMiddleRowsIndex = kNumActualColumns * kNumRowsPerPlayer;
+		int endMiddleRowsIndex = kNumActualColumns * (kNumRows - kNumRowsPerPlayer);
 		for (int i = startMiddleRowsIndex; i < endMiddleRowsIndex; i++)
 		{
 			board_[i] = nullptr;
 		}
 
 		// Team X
-		for (int i = piecesPerPlayer; i < kNumPieces; i++)
+		for (int i = kNumPiecesPerPlayer; i < kNumPieces; i++)
 		{
 			pieces_[i].setIsKing(false);
+			pieces_[i].setMark(0);
 			pieces_[i].setSide(PieceSide::X);
-			board_[kNumCells + piecesPerPlayer - i - 1 ] = pieces_ + i;
+			board_[kNumCells + kNumPiecesPerPlayer - i - 1 ] = pieces_ + i;
 		}
+
+		pieceCount_[0] = kNumPiecesPerPlayer;
+		pieceCount_[1] = kNumPiecesPerPlayer;
 	}
 
 	bool CheckerBoard::isCoordValid(CompactCoordinate coord) const
 	{
 		bool rowShifted = isRowShifted(coord.row);
 
-		return !(coord.column & 1 ^ rowShifted);
+		return !(coord.column & 1 ^ rowShifted) && coord.column >= 0 && coord.column < kNumColumns && coord.row >= 0 && coord.row < kNumRows;
+	}
+
+	unsigned short CheckerBoard::getNumPieces(PieceSide side) const
+	{
+		return pieceCount_[side];
 	}
 
 
@@ -86,7 +94,12 @@ namespace checkers
 		if (index == -1)
 			return false;
 
+		CheckerPiece *previousPiece = board_[index];
+		if (previousPiece)
+			pieceCount_[previousPiece->getSide()]--;
 		board_[index] = piece;
+		if (piece)
+			pieceCount_[piece->getSide()]++;
 		return true;
 	}
 
@@ -97,6 +110,8 @@ namespace checkers
 			return nullptr;
 
 		CheckerPiece *piece = board_[index];
+		if (piece)
+			pieceCount_[piece->getSide()]--;
 		board_[index] = nullptr;
 		return piece;
 	}
@@ -111,7 +126,7 @@ namespace checkers
 			if (isPaddedRow)
 			{
 				stream << ' ';
-				for (int x = 0; x < CheckerBoard::kNumColumns * 2; x++)
+				for (int x = 0; x < CheckerBoard::kNumActualColumns * 2; x++)
 				{
 					stream << (char)('a' + x);
 				}
@@ -120,11 +135,11 @@ namespace checkers
 			else
 			{
 				stream << (char)('1' + y);
-				for (int x = 0; x < CheckerBoard::kNumColumns * 2; x++)
+				for (int x = 0; x < CheckerBoard::kNumActualColumns * 2; x++)
 				{
 					if (!board.isRowShifted(y) ^ (x & 1) )
 					{
-						CheckerPiece* piece = board.getPiece(x / 2 + y * CheckerBoard::kNumColumns);
+						CheckerPiece* piece = board.getPiece(x / 2 + y * CheckerBoard::kNumActualColumns);
 						if (piece)
 						{
 							stream << piece->getSymbol();

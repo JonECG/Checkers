@@ -6,15 +6,14 @@ namespace checkers
 	class Move;
 	class Player
 	{
-		int numPiecesRemaining_;
 		PieceSide controllingSide_;
 	public:
 
 		// Requests a move from the player
 		Move requestMove() const;
 
-		int getNumPiecesRemaining() const;
-		void setNumPiecesRemaining(int numPieces);
+		// Returns the symbol that represents the side this player controls
+		char getSymbol() const;
 		PieceSide getControllingSide() const;
 		void setControllingSide(PieceSide side);
 	};

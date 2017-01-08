@@ -8,20 +8,25 @@ namespace checkers
 {
 	class CheckerPiece;
 	class Move;
+	enum PieceSide : unsigned char;
 
 	class CheckerBoard
 	{
 	public:
 		static const int kNumRows = 8;
-		static const int kNumColumns = 4;
+		static const int kNumActualColumns = 4; // How many playable columns there are per row
 		static const int kNumRowsPerPlayer = 3;
+		static const int kNumSides = 2;
 
-		static const int kNumPieces = 2 * kNumRowsPerPlayer * kNumColumns;
-		static const int kNumCells = kNumRows * kNumColumns;
+		static const int kNumColumns = kNumActualColumns * kNumSides;
+		static const int kNumPiecesPerPlayer = kNumRowsPerPlayer * kNumActualColumns;
+		static const int kNumPieces = kNumSides * kNumPiecesPerPlayer;
+		static const int kNumCells = kNumRows * kNumActualColumns;
 
 	private:
 		CheckerPiece* pieces_;
 		CheckerPiece* board_[kNumCells];
+		unsigned short pieceCount_[kNumSides];
 
 		bool isRowShifted(int row) const;
 		int getIndexFromCoord(CompactCoordinate coord) const;
@@ -37,6 +42,9 @@ namespace checkers
 		void setupBoard();
 
 		bool isCoordValid(CompactCoordinate coord) const;
+
+		// Returns the number of pieces for the given side on the board
+		unsigned short getNumPieces(PieceSide side) const;
 
 		// Returns the piece at the given coordinates. Returns null if no piece is there or coordinate is invalid
 		CheckerPiece* getPiece(CompactCoordinate coord) const;

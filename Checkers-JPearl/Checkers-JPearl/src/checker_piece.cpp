@@ -5,6 +5,7 @@ namespace checkers
 	CheckerPiece::CheckerPiece()
 	{
 		isKing_ = false;
+		mark_ = 0;
 	}
 
 	bool CheckerPiece::getIsKing() const
@@ -25,6 +26,14 @@ namespace checkers
 	void CheckerPiece::setSide(PieceSide side)
 	{
 		side_ = side;
+	}
+	unsigned char CheckerPiece::getMark() const
+	{
+		return mark_;
+	}
+	void CheckerPiece::setMark(unsigned char mark)
+	{
+		mark_ = mark;
 	}
 	char CheckerPiece::getSymbol() const
 	{

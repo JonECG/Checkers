@@ -17,7 +17,7 @@ namespace checkers
 		{
 
 			std::cout << "Enter a move as {start} {destination1} {destinationX...}  Eg: c3 d4" << std::endl;
-			std::cout << "player '" << ( (controllingSide_ == PieceSide::O) ? 'o' : 'x' ) << "'> ";
+			std::cout << "player '" << getSymbol() << "'> ";
 
 			std::string input;
 			std::getline(std::cin, input);
@@ -43,14 +43,9 @@ namespace checkers
 		}
 		return result;
 	}
-	int Player::getNumPiecesRemaining() const
+	char Player::getSymbol() const
 	{
-		return numPiecesRemaining_;
-	}
-
-	void Player::setNumPiecesRemaining(int numPieces)
-	{
-		numPiecesRemaining_ = numPieces;
+		return (controllingSide_ == PieceSide::O) ? 'o' : 'x';
 	}
 
 	PieceSide Player::getControllingSide() const
