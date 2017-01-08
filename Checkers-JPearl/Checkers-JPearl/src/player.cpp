@@ -25,15 +25,6 @@ namespace checkers
 			try
 			{
 				result = checkers::Move::parseFromString(input.c_str());
-
-				std::cout << "Parsed coords: ";
-				for (int i = 0; i < result.getNumCoords(); i++)
-				{
-					checkers::CompactCoordinate coord = result.getCoordinate(i);
-					std::cout << "< " << std::to_string(coord.column) << ", " << std::to_string(coord.row) << " >; ";
-				}
-				std::cout << std::endl;
-
 				moveSuccessfullyMade = true;
 			}
 			catch (std::exception& e)

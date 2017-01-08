@@ -125,16 +125,17 @@ namespace checkers
 
 			if (isPaddedRow)
 			{
-				stream << ' ';
+				stream << "  ";
 				for (int x = 0; x < CheckerBoard::kNumActualColumns * 2; x++)
 				{
-					stream << (char)('a' + x);
+					// Show uppercase values on top and lowercase on bottom
+					stream << (char)(((y == -1) ? 'a' : 'A' ) + x) << ' ';
 				}
-				stream << ' ';
+				stream << "  ";
 			}
 			else
 			{
-				stream << (char)('1' + y);
+				stream << (char)('1' + y) << ' ';
 				for (int x = 0; x < CheckerBoard::kNumActualColumns * 2; x++)
 				{
 					if (!board.isRowShifted(y) ^ (x & 1) )
@@ -142,19 +143,19 @@ namespace checkers
 						CheckerPiece* piece = board.getPiece(x / 2 + y * CheckerBoard::kNumActualColumns);
 						if (piece)
 						{
-							stream << piece->getSymbol();
+							stream << piece->getSymbol() << ' ';
 						}
 						else
 						{
-							stream << '.';
+							stream << ". ";
 						}
 					}
 					else
 					{
-						stream << ' ';
+						stream << "  ";
 					}
 				}
-				stream << (char)('1' + y);
+				stream << (char)('1' + y) << ' ';
 			}
 			
 			stream << std::endl;

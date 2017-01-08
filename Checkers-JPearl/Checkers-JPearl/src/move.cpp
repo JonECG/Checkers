@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include "checker_board.h"
+
 namespace checkers
 {
 
@@ -42,7 +44,7 @@ namespace checkers
 			}
 			else
 			// Column
-			if ((currentChar >= 'a' && currentChar <= 'h') || ( isUpperCase = (currentChar >= 'A' && currentChar <= 'H' )))
+			if ((currentChar >= 'a' && currentChar < 'a' + +CheckerBoard::kNumColumns) || ( isUpperCase = (currentChar >= 'A' && currentChar < 'A' + CheckerBoard::kNumColumns)))
 			{
 				if( currentColumn != -1)
 					throw std::invalid_argument("Could not parse move. Coordinate row was expected after column but another column index was provided");
@@ -54,7 +56,7 @@ namespace checkers
 			}
 			else
 			// Row
-			if (currentChar >= '1' && currentChar <= '8')
+			if (currentChar >= '1' && currentChar < '1' + CheckerBoard::kNumRows)
 			{
 				if (currentColumn == -1)
 					throw std::invalid_argument("Could not parse move. Coordinate column was expected first but row index was provided");
