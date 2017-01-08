@@ -10,7 +10,7 @@ namespace checkers
 		return row & 1;
 	}
 	// Returns the index into the board_ array that corresponds to the given coordinates. Excepts on invalid coordinates such as trying to get the index for a coordinate that is between playable spaces
-	int CheckerBoard::getIndexFromCoord(CompactCoord coord) const
+	int CheckerBoard::getIndexFromCoord(CompactCoordinate coord) const
 	{
 		// TODO: account for shifting and except on nonplay coords
 		return coord.column / 2 + coord.row * kNumColumns;
@@ -26,6 +26,7 @@ namespace checkers
 	void CheckerBoard::release()
 	{
 		delete[] pieces_;
+		pieces_ = nullptr;
 	}
 
 	void CheckerBoard::setupBoard()
@@ -61,7 +62,7 @@ namespace checkers
 	{
 		return board_[index];
 	}
-	CheckerPiece* CheckerBoard::getPiece(CompactCoord coord) const
+	CheckerPiece* CheckerBoard::getPiece(CompactCoordinate coord) const
 	{
 		return getPiece(getIndexFromCoord(coord));
 	}

@@ -2,9 +2,9 @@
 
 namespace checkers
 {
-	struct CompactCoord
+	struct CompactCoordinate
 	{
-		unsigned int row : 4;
-		unsigned int column : 4;
+		unsigned char row : 4;
+		unsigned char column : 4;
 	};
 }

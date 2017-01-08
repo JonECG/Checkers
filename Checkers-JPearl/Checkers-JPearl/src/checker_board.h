@@ -21,7 +21,7 @@ namespace checkers
 		CheckerPiece* board_[kNumCells];
 
 		bool isRowShifted(int row) const;
-		int getIndexFromCoord(CompactCoord coord) const;
+		int getIndexFromCoord(CompactCoordinate coord) const;
 		CheckerPiece* getPiece(int index) const;
 
 	public:
@@ -34,7 +34,7 @@ namespace checkers
 		void setupBoard();
 
 		// Returns the piece at the given coordinates. Returns null if no piece is there. Excepts on invalid coordinates such as trying to get the index for a coordinate that is between playable spaces.
-		CheckerPiece* getPiece(CompactCoord coord) const;
+		CheckerPiece* getPiece(CompactCoordinate coord) const;
 
 		// Inserts a textual representation of the board and its pieces into a stream
 		friend std::ostream& operator<< (std::ostream& stream, const CheckerBoard& matrix);
