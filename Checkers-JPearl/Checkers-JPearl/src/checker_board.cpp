@@ -1,8 +1,5 @@
 #include "checker_board.h"
 
-#include <stdexcept>
-#include <vector>
-
 #include "checker_piece.h"
 #include "move.h"
 
@@ -73,100 +70,6 @@ namespace checkers
 		return !(coord.column & 1 ^ rowShifted);
 	}
 
-	// All of the hard work of move validation happens here
-	bool CheckerBoard::attemptMove(const Move & move)
-	{
-		CompactCoordinate startCoord = move.getCoordinate(0);
-		int startIndex = getIndexFromCoord(startCoord);
-		
-		if (startIndex == -1)
-			return false; // Start position was not valid
-
-		CheckerPiece *piece = board_[startIndex];
-
-		if (!piece)
-			return false; // No checker in start position
-
-		// Board and piece state do not change until the move is completed
-		bool treatAsKing = piece->getIsKing();
-		std::vector<unsigned char> toBeRemoved = std::vector<unsigned char>();
-
-		CompactCoordinate previousCoord = startCoord;
-		for (int i = 1; i < move.getNumCoords(); i++)
-		{
-			CompactCoordinate currentCoord = move.getCoordinate(i);
-			int index = getIndexFromCoord(currentCoord);
-
-			if (index == -1)
-				return false; // Intermediate position was not valid
-
-			int deltaX = currentCoord.column - previousCoord.column;
-			int deltaY = currentCoord.row - previousCoord.row;
-
-			if (std::abs(deltaX) != std::abs(deltaY))
-				return false; // Checkers can only move diagonally
-
-			int distance = std::abs(deltaY);
-
-			switch (distance)
-			{
-			case 0:
-				return false; // Checkers have to move at least one space
-			case 1:
-
-				if (move.getNumCoords() > 2)
-					return false; // Moves to adjacent squares can only be made in a singular move
-
-				if (!treatAsKing && ( (deltaY > 0) ^ (piece->getSide() == PieceSide::O) ))
-					return false; // This piece cannot move that way
-
-				if (board_[index] != nullptr)
-					return false; // The space is already occupied
-
-				break;
-			case 2:
-			{
-				if (!treatAsKing && ((deltaY > 0) ^ (piece->getSide() == PieceSide::O)))
-					return false; // This piece cannot move that way
-
-				if (board_[index] != nullptr)
-					return false; // The space is already occupied
-
-				CompactCoordinate middleCoord = previousCoord;
-				middleCoord.column += deltaX / 2;
-				middleCoord.row += deltaY / 2;
-				unsigned char middleIndex = getIndexFromCoord(middleCoord);
-
-				if (board_[middleIndex] == nullptr || board_[middleIndex]->getSide() == piece->getSide())
-					return false; // Can't jump over empty spaces or pieces of your color
-
-				toBeRemoved.push_back(middleIndex);
-
-				break;
-			}
-			default:
-				return false; // Checkers can't move that far
-			}
-
-
-			// Evaluate if piece should be king from this step
-			if ( (piece->getSide() == PieceSide::X && currentCoord.row == 0) || (piece->getSide() == PieceSide::O && currentCoord.row == kNumRows - 1) )
-				treatAsKing = true;
-
-			previousCoord = currentCoord;
-		}
-
-
-		// If move was valid, apply the move
-		for (unsigned int i = 0; i < toBeRemoved.size(); i++)
-		{
-			board_[toBeRemoved[i]] = nullptr;
-		}
-		piece->setIsKing(treatAsKing);
-		board_[startIndex] = nullptr;
-		board_[getIndexFromCoord(previousCoord)] = piece;
-		return true;
-	}
 
 	CheckerPiece* CheckerBoard::getPiece(int index) const
 	{
@@ -175,6 +78,27 @@ namespace checkers
 	CheckerPiece* CheckerBoard::getPiece(CompactCoordinate coord) const
 	{
 		return getPiece(getIndexFromCoord(coord));
+	}
+
+	bool CheckerBoard::setPiece(CompactCoordinate coord, CheckerPiece* piece)
+	{
+		int index = getIndexFromCoord(coord);
+		if (index == -1)
+			return false;
+
+		board_[index] = piece;
+		return true;
+	}
+
+	CheckerPiece* CheckerBoard::removeAt(CompactCoordinate coord)
+	{
+		int index = getIndexFromCoord(coord);
+		if (index == -1)
+			return nullptr;
+
+		CheckerPiece *piece = board_[index];
+		board_[index] = nullptr;
+		return piece;
 	}
 
 
