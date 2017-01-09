@@ -28,6 +28,32 @@ namespace checkers
 		setupBoard();
 	}
 
+	void CheckerBoard::initialize(const CheckerBoard & toClone)
+	{
+		pieces_ = new CheckerPiece[kNumPieces];
+		for (int i = 0; i < kNumPieces; i++)
+		{
+			pieces_[i] = toClone.pieces_[i];
+		}
+
+		for (int i = 0; i < kNumCells; i++)
+		{
+			if (toClone.board_[i] == nullptr)
+			{
+				board_[i] = nullptr;
+			}
+			else
+			{
+				// Some pointer arithmetic to find the index into the array 
+				int offset = toClone.board_[i] - toClone.pieces_;
+				board_[i] = pieces_ + offset;
+			}
+		}
+
+		pieceCount_[0] = toClone.pieceCount_[0];
+		pieceCount_[1] = toClone.pieceCount_[1];
+	}
+
 	void CheckerBoard::release()
 	{
 		delete[] pieces_;

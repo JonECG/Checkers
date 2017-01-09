@@ -35,6 +35,8 @@ namespace checkers
 	public:
 		// Allocates memory for pieces, also calls setupBoard()
 		void initialize();
+		// Allocates memory for pieces and clones state from given board and its pieces
+		void initialize(const CheckerBoard& toClone);
 		// Releases memory allocated by initialize()
 		void release();
 

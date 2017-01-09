@@ -10,7 +10,7 @@ namespace checkers
 	{
 		friend class AiPlayer;
 
-		CheckerBoard checkerBoard_;
+		CheckerBoard *checkerBoard_;
 		Player **players_;
 		unsigned char numPlayers_;
 		unsigned char currentPlayerTurn_;

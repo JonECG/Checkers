@@ -17,7 +17,8 @@ namespace checkers
 
 	void Game::initialize()
 	{
-		checkerBoard_.initialize();
+		checkerBoard_ = new CheckerBoard();
+		checkerBoard_->initialize();
 		players_ = new Player*[2];
 		numPlayers_ = 2;
 
@@ -30,7 +31,8 @@ namespace checkers
 
 	void Game::release()
 	{
-		checkerBoard_.release();
+		checkerBoard_->release();
+		delete checkerBoard_;
 
 		for (int i = 0; i < numPlayers_; i++)
 		{
@@ -64,7 +66,7 @@ namespace checkers
 		}
 
 		if (piece == nullptr)
-			piece = checkerBoard_.getPiece(coord);
+			piece = checkerBoard_->getPiece(coord);
 
 		if (piece == nullptr)
 			return false; // No piece at given position
@@ -80,11 +82,11 @@ namespace checkers
 			CompactCoordinate move = coord;
 			move.column += deltaX; move.row += deltaY;
 
-			if (!checkerBoard_.isCoordValid(move))
+			if (!checkerBoard_->isCoordValid(move))
 				continue; // This direction is stopped by the end of the board
 
 
-			CheckerPiece *pieceAtMove = checkerBoard_.getPiece(move);
+			CheckerPiece *pieceAtMove = checkerBoard_->getPiece(move);
 
 			if (!onlyJumpMoves && (pieceAtMove == nullptr || pieceAtMove == piece || (ignoreMarked && pieceAtMove->getMark()) ) ) // Treats space as empty if it's the space the piece actually occupies during simulation
 			{
@@ -102,10 +104,10 @@ namespace checkers
 				CompactCoordinate jump = move;
 				jump.column += deltaX; jump.row += deltaY;
 
-				if (!checkerBoard_.isCoordValid(jump))
+				if (!checkerBoard_->isCoordValid(jump))
 					continue; // This direction is stopped by the end of the board
 
-				CheckerPiece *pieceAtJump = checkerBoard_.getPiece(jump);
+				CheckerPiece *pieceAtJump = checkerBoard_->getPiece(jump);
 
 				if (pieceAtMove != nullptr && pieceAtMove->getSide() != piece->getSide() && !(ignoreMarked && pieceAtMove->getMark()) && (pieceAtJump == nullptr || pieceAtJump == piece || (ignoreMarked && pieceAtJump->getMark())))
 				{
@@ -133,9 +135,9 @@ namespace checkers
 				CompactCoordinate coord = CompactCoordinate();
 				coord.column = x; coord.row = y;
 
-				if (checkerBoard_.isCoordValid(coord))
+				if (checkerBoard_->isCoordValid(coord))
 				{
-					CheckerPiece *piece = checkerBoard_.getPiece(coord);
+					CheckerPiece *piece = checkerBoard_->getPiece(coord);
 					if (piece != nullptr && piece->getSide() == side)
 					{
 						if (canMovePieceAt(coord, piece, onlyJumpMoves, ignoreMarked))
@@ -152,10 +154,10 @@ namespace checkers
 	{
 		CompactCoordinate startCoord = move.getCoordinate(0);
 
-		if (!checkerBoard_.isCoordValid(startCoord))
+		if (!checkerBoard_->isCoordValid(startCoord))
 			return "Start position was not valid";
 
-		CheckerPiece *piece = checkerBoard_.getPiece(startCoord);
+		CheckerPiece *piece = checkerBoard_->getPiece(startCoord);
 
 		if (!piece)
 			return "No checker in start position";
@@ -170,7 +172,7 @@ namespace checkers
 		{
 			CompactCoordinate currentCoord = move.getCoordinate(i);
 
-			if (!checkerBoard_.isCoordValid(currentCoord))
+			if (!checkerBoard_->isCoordValid(currentCoord))
 				return "An intermediate position was not valid";
 
 			int deltaX = currentCoord.column - previousCoord.column;
@@ -193,7 +195,7 @@ namespace checkers
 				if (!treatAsKing && ((deltaY > 0) ^ (piece->getSide() == PieceSide::O)))
 					return "The piece tried to move in a direction it was not allowed to";
 
-				if (checkerBoard_.getPiece(currentCoord) != nullptr)
+				if (checkerBoard_->getPiece(currentCoord) != nullptr)
 					return "The piece tried to move into a space that is already occupied";
 
 				if (canAnyPieceMove(piece->getSide(), true))
@@ -206,13 +208,13 @@ namespace checkers
 				if (!treatAsKing && ((deltaY > 0) ^ (piece->getSide() == PieceSide::O)))
 					return "The piece tried to jump in a direction it was not allowed to";
 
-				if (checkerBoard_.getPiece(currentCoord) != nullptr && checkerBoard_.getPiece(currentCoord) != piece) // Treats space as empty if it's the one that's moving
+				if (checkerBoard_->getPiece(currentCoord) != nullptr && checkerBoard_->getPiece(currentCoord) != piece) // Treats space as empty if it's the one that's moving
 					return "The piece tried to jump into a space that is already occupied";
 
 				CompactCoordinate middleCoord = previousCoord;
 				middleCoord.column += deltaX / 2;
 				middleCoord.row += deltaY / 2;
-				CheckerPiece *middlePiece = checkerBoard_.getPiece(middleCoord);
+				CheckerPiece *middlePiece = checkerBoard_->getPiece(middleCoord);
 
 				if (middlePiece == nullptr || middlePiece->getSide() == piece->getSide())
 					return "The piece tried to jump over empty spaces or pieces of its color";
@@ -248,8 +250,8 @@ namespace checkers
 			return "If jumping, the piece cannot stop jumping until there are no more jumps available";
 
 		piece->setIsKing(treatAsKing);
-		checkerBoard_.removeAt(startCoord);
-		checkerBoard_.setPiece(previousCoord, piece);
+		checkerBoard_->removeAt(startCoord);
+		checkerBoard_->setPiece(previousCoord, piece);
 
 		return nullptr;
 	}
@@ -263,12 +265,12 @@ namespace checkers
 		for (unsigned int i = 0; i < toBeRemoved.size(); i++)
 		{
 			// Reset mark from in progress captures
-			checkerBoard_.getPiece(toBeRemoved[i])->setMark(0);
+			checkerBoard_->getPiece(toBeRemoved[i])->setMark(0);
 
 			// If move was valid, remove taken pieces
 			if (error == nullptr)
 			{
-				CheckerPiece *piece = checkerBoard_.removeAt(toBeRemoved[i]);
+				CheckerPiece *piece = checkerBoard_->removeAt(toBeRemoved[i]);
 			}
 		}
 		return error;
@@ -277,7 +279,7 @@ namespace checkers
 	bool Game::checkForWinCondition() const
 	{
 		Player *otherPlayer = players_[(currentPlayerTurn_ + 1) % numPlayers_];
-		return (checkerBoard_.getNumPieces(otherPlayer->getControllingSide()) == 0 || !canAnyPieceMove(otherPlayer->getControllingSide()));
+		return (checkerBoard_->getNumPieces(otherPlayer->getControllingSide()) == 0 || !canAnyPieceMove(otherPlayer->getControllingSide()));
 	}
 
 	int Game::run()
@@ -287,7 +289,7 @@ namespace checkers
 
 		while (gameIsRunning)
 		{
-			std::cout << checkerBoard_;
+			std::cout << *checkerBoard_ << std::endl;
 
 			bool validMoveReceived = false;
 			while (!validMoveReceived)
@@ -297,7 +299,7 @@ namespace checkers
 				std::cout << "Trying move: " << move << std::endl;
 
 				// Validate move
-				CheckerPiece *piece = checkerBoard_.getPiece(move.getCoordinate(0));
+				CheckerPiece *piece = checkerBoard_->getPiece(move.getCoordinate(0));
 				if (piece == nullptr || piece->getSide() != players_[currentPlayerTurn_]->getControllingSide())
 				{
 					// Not a valid checker
@@ -327,7 +329,7 @@ namespace checkers
 			std::cout << std::endl << std::endl;
 		}
 
-		std::cout << checkerBoard_;
+		std::cout << *checkerBoard_;
 		std::cout << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' wins!" << std::endl;
 
 		return currentPlayerTurn_;
