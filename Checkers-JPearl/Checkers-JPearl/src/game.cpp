@@ -23,7 +23,7 @@ namespace checkers
 		numPlayers_ = 2;
 
 		players_[PieceSide::O] = new AiPlayer(this, 5);
-		players_[PieceSide::X] = new AiPlayer(this, 3);
+		players_[PieceSide::X] = new AiPlayer(this, 5);
 
 		players_[PieceSide::O]->setControllingSide(PieceSide::O);
 		players_[PieceSide::X]->setControllingSide(PieceSide::X);
@@ -126,7 +126,7 @@ namespace checkers
 		return (coordinates != nullptr) && (*numCoordinates > 0);
 	}
 
-	bool Game::canAnyPieceMove(PieceSide side, bool onlyJumpMoves, bool ignoreMarked) const
+	bool Game::canAnyPieceMove(PieceSide side, bool onlyJumpMoves, bool ignoreMarked, int * count) const
 	{
 		for (int x = 0; x < CheckerBoard::kNumColumns; x++)
 		{
@@ -141,12 +141,17 @@ namespace checkers
 					if (piece != nullptr && piece->getSide() == side)
 					{
 						if (canMovePieceAt(coord, piece, onlyJumpMoves, ignoreMarked))
-							return true; // Early out
+						{
+							if (count)
+								(*count)++;
+							else
+								return true; // Early out
+						}
 					}
 				}
 			}
 		}
-		return false;
+		return (count != nullptr && *count > 0);
 	}
 
 	// All of the hard work of move validation happens here

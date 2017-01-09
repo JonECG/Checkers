@@ -36,8 +36,8 @@ namespace checkers
 		double evaluateMove(const Move& move, PieceSide side, double previousBoardScore, int recurseLevels) const;
 		// Returns whether the given move has already been made recently
 		bool isMoveInHistory(const Move& move) const;
-		// Finds the best move in terms of possible value from all available moves. Returns the move most in favor of the given side and its score in the outBestScore parameter
-		Move* findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double& outBestScore, bool useHistory = false ) const;
+		// Finds the best move in terms of possible value from all available moves. Returns the move most in favor of the given side and its score in the outBestScore parameter. Also keeps track of worst score
+		Move* findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double& outBestScore, double& outWorstScore, bool useHistory = false ) const;
 	public:
 		AiPlayer(Game * game, int recurseLevels);
 

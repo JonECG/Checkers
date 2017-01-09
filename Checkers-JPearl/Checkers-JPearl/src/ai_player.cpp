@@ -128,13 +128,13 @@ namespace checkers
 	double AiPlayer::evaluateBoardState(const CheckerBoard & board) const
 	{
 		// Valuing pieces
-		const double kPointsForMenAtHomeRow = 5;
-		const double kPointsForMenAtKingRow = 6;
-		const double kPointsForKing = 7;
+		const double kPointsForMenAtHomeRow = 1;
+		const double kPointsForMenAtKingRow = 1.1;
+		const double kPointsForKing = 1.3;
 
 		// Small biases to promote cohesion
-		const double kPointsForMoveAvailable = 0.2;
-		const double kPenaltyForAdjacentOpenSquare = 0.1;
+		const double kPointsForMoveAvailable = 0.01;
+		const double kPointsForPieceInCenter = 0.02;
 
 		double score = 0;
 
@@ -165,10 +165,23 @@ namespace checkers
 							double progress = (y - startRow) / (endRow - startRow);
 							score += multiplier * std::abs(kPointsForMenAtHomeRow + (kPointsForMenAtKingRow - kPointsForMenAtHomeRow)*(progress));
 						}
+
+						// Manhatten distance
+						double distToCenter = std::abs((CheckerBoard::kNumColumns / 2) - coord.column) + std::abs((CheckerBoard::kNumRows / 2) - coord.row);
+						double maxDist = CheckerBoard::kNumColumns / 2 + CheckerBoard::kNumRows / 2;
+						double distPercent = 1 - (distToCenter / maxDist);
+						score += multiplier * distPercent * kPointsForPieceInCenter;
 					}
 				}
 			}
 		}
+
+		// Evaluate Num Moves each
+		int count = 0;
+		game_->canAnyPieceMove(PieceSide::O, false, false, &count);
+		score -= count * kPointsForMoveAvailable;
+		game_->canAnyPieceMove(PieceSide::X, false, false, &count);
+		score += count * kPointsForMoveAvailable;
 
 		return score;
 	}
@@ -196,14 +209,21 @@ namespace checkers
 			// From this board state find all moves the opponent can make
 			
 			Move moves[kMoveArraySize];
-			double futureScore = 0;
+			double futureBestScore = 0;
+			double futureWorstScore = 0;
 
 			PieceSide otherSide = (side == PieceSide::O) ? PieceSide::X : PieceSide::O;
 
-			findBestMove(moves, kMoveArraySize, otherSide, boardScore, recurseLevels - 1, futureScore);
+			findBestMove(moves, kMoveArraySize, otherSide, boardScore, recurseLevels - 1, futureBestScore, futureWorstScore);
 
-			static double kUncertaintyPenalty = 0.99;
-			score += futureScore * kUncertaintyPenalty;
+			static double kUncertaintyPenalty = 0.75;
+			double predictScore = futureBestScore * kUncertaintyPenalty;
+
+			// If the predicted score is even worse than the worst possible future score, clamp it to the worst score
+			if ((predictScore < futureWorstScore && predictScore < futureBestScore) || (predictScore > futureWorstScore && predictScore > futureBestScore) )
+				predictScore = futureWorstScore;
+
+			score += predictScore;
 		}
 
 		game_->checkerBoard_ = originalBoard;
@@ -227,7 +247,7 @@ namespace checkers
 		return false;
 	}
 
-	Move * AiPlayer::findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double & outBestScore, bool useHistory) const
+	Move * AiPlayer::findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double &outBestScore, double & outWorstScore, bool useHistory) const
 	{
 		int startIndex = 0;
 		int numPossibleMoves = findAllMoves(side, moves, capacity, startIndex);
@@ -242,11 +262,11 @@ namespace checkers
 		{
 			// Early out if only one move available
 			outBestScore = evaluateMove(moves[startIndex], side, currentBoardScore, 0);
+			outWorstScore = outBestScore;
 			return moves + startIndex;
 		}
 		
 		int bestMoveIndex = startIndex;
-		double bestValue = 0;
 		bool found = false;
 
 		for (int i = 0; i < numPossibleMoves; i++)
@@ -256,15 +276,23 @@ namespace checkers
 
 			double value = evaluateMove(moves[i + startIndex], side, currentBoardScore, recurseLevels);
 			// Find best value in favor of this side
-			if ( !found || ( (value > bestValue) ^ (side == PieceSide::O) ) )
+			if ( !found || ( (value > outBestScore) ^ (side == PieceSide::O) ) )
 			{
 				bestMoveIndex = i + startIndex;
-				bestValue = value;
-				found = true;
+				outBestScore = value;
+				
 			}
+			if (!found || ((value < outWorstScore) ^ (side == PieceSide::O)))
+			{
+				outWorstScore = value;
+			}
+
+			if(useHistory)
+				std::cout << "AI values  " << moves[i + startIndex] << " at " << value << std::endl;
+
+			found = true;
 		}
 
-		outBestScore = bestValue;
 		return moves + bestMoveIndex;
 	}
 
@@ -272,8 +300,9 @@ namespace checkers
 	{
 		Move moves[kMoveArraySize];
 		double score = 0;
+		double worstScore = 0;
 		double boardScore = evaluateBoardState(*game_->checkerBoard_);
- 		Move move = *findBestMove(moves, kMoveArraySize, getControllingSide(), boardScore, recurseLevels_, score, true);
+ 		Move move = *findBestMove(moves, kMoveArraySize, getControllingSide(), boardScore, recurseLevels_, score, worstScore, true);
 
 		// If this was an adjacent move, add it to the history
 		if (move.getNumCoords() == 2)
