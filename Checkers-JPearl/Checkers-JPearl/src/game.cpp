@@ -21,9 +21,9 @@ namespace checkers
 		checkerBoard_->initialize();
 
 		if(!players_[PieceSide::O])
-			players_[PieceSide::O] = new LocalPlayer();
+			players_[PieceSide::O] = new LocalPlayer(this);
 		if(!players_[PieceSide::X])
-			players_[PieceSide::X] = new LocalPlayer();
+			players_[PieceSide::X] = new LocalPlayer(this);
 
 		players_[PieceSide::O]->setControllingSide(PieceSide::O);
 		players_[PieceSide::X]->setControllingSide(PieceSide::X);
@@ -161,6 +161,46 @@ namespace checkers
 			}
 		}
 		return (count != nullptr && *count > 0);
+	}
+
+	void Game::jumpExplorationRecursion(const Move & moveToExplore, CheckerPiece * target, Move * moves, int& outCurrentIndex) const
+	{
+		CompactCoordinate endCoord = moveToExplore.getCoordinate(moveToExplore.getNumCoords() - 1);
+		CompactCoordinate middleCoord = moveToExplore.getCoordinate(moveToExplore.getNumCoords() - 2);
+		middleCoord.column = (middleCoord.column + endCoord.column) / 2;
+		middleCoord.row = (middleCoord.row + endCoord.row) / 2;
+
+		CheckerPiece *jumpedPiece = checkerBoard_->getPiece(middleCoord);
+		unsigned char prevMark = jumpedPiece->getMark();
+		jumpedPiece->setMark(1);
+
+		bool wasKing = target->getIsKing();
+		if ((target->getSide() == PieceSide::X && endCoord.row == 0) || (target->getSide() == PieceSide::O && endCoord.row == CheckerBoard::kNumRows - 1))
+			target->setIsKing(true);
+
+		const int maxMovesPerPiece = 4;
+		CompactCoordinate results[maxMovesPerPiece];
+		int numResults = maxMovesPerPiece;
+
+		canMovePieceAt(endCoord, target, true, true, results, &numResults);
+
+		if (numResults == 0) // End of this jump sequence
+		{
+			moves[outCurrentIndex++] = moveToExplore;
+		}
+		else
+		{
+			for (int i = 0; i < numResults; i++)
+			{
+				Move newMove = moveToExplore;
+				newMove.addCoordinate(results[i]);
+				jumpExplorationRecursion(newMove, target, moves, outCurrentIndex);
+			}
+		}
+
+
+		target->setIsKing(wasKing);
+		jumpedPiece->setMark(prevMark);
 	}
 
 	// All of the hard work of move validation happens here
@@ -347,6 +387,75 @@ namespace checkers
 		std::cout << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' wins!" << std::endl;
 
 		return currentPlayerTurn_;
+	}
+
+	int Game::findAllMoves(PieceSide side, Move * moves, int moveCapacity, int& outStartPosition) const
+	{
+		CheckerBoard *cb = checkerBoard_;
+
+		// Store adjacent moves in the back array and jump moves in the front so they're divided if we're only concerned with jumps
+
+		int currentMoveIndex = 0;
+		int currentJumpIndex = 0;
+
+		bool canJump = false;
+
+		// Get all moves
+		for (int x = 0; x < CheckerBoard::kNumColumns; x++)
+		{
+			for (int y = 0; y < CheckerBoard::kNumRows; y++)
+			{
+				CompactCoordinate coord = CompactCoordinate();
+				coord.column = x; coord.row = y;
+
+				if (cb->isCoordValid(coord))
+				{
+					CheckerPiece *piece = cb->getPiece(coord);
+					if (piece != nullptr && piece->getSide() == side)
+					{
+						CompactCoordinate results[kMaxMovesPerPiece];
+						int numResults = kMaxMovesPerPiece;
+						canMovePieceAt(coord, piece, false, false, results, &numResults);
+
+						for (int i = 0; i < numResults; i++)
+						{
+							Move move = Move();
+							move.addCoordinate(coord);
+							move.addCoordinate(results[i]);
+
+							int distance = std::abs(results[i].column - coord.column);
+							if (distance == 1 && !canJump) // is a move
+							{
+								moves[moveCapacity - 1 - currentMoveIndex++] = move;
+							}
+
+							if (distance == 2) // is a jump
+							{
+								// Perform depth first exploration of jumps backed by the unused portion of the move array
+								jumpExplorationRecursion(move, piece, moves, currentJumpIndex);
+								canJump = true;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		int startIndex = 0, endIndex = 0;
+
+		if (canJump)
+		{
+			startIndex = 0;
+			endIndex = currentJumpIndex;
+		}
+		else
+		{
+			startIndex = moveCapacity - currentMoveIndex;
+			endIndex = moveCapacity;
+		}
+
+		outStartPosition = startIndex;
+		return endIndex - startIndex;
 	}
 
 	const Player * Game::getPlayer(int index) const

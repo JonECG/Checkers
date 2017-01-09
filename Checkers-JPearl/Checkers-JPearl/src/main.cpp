@@ -58,8 +58,8 @@ int main(int argc, char ** argv)
 			case '1':
 			{
 				checkers::Game game = checkers::Game();
-				game.registerPlayer(new checkers::LocalPlayer(), checkers::PieceSide::O);
-				game.registerPlayer(new checkers::LocalPlayer(), checkers::PieceSide::X);
+				game.registerPlayer(new checkers::LocalPlayer(&game), checkers::PieceSide::O);
+				game.registerPlayer(new checkers::LocalPlayer(&game), checkers::PieceSide::X);
 				game.initialize();
 				winner = game.getPlayer(game.run())->getControllingSide();
 				game.release();
@@ -68,7 +68,7 @@ int main(int argc, char ** argv)
 			case '2':
 			{
 				checkers::Game game = checkers::Game();
-				game.registerPlayer(new checkers::LocalPlayer(), checkers::PieceSide::O);
+				game.registerPlayer(new checkers::LocalPlayer(&game), checkers::PieceSide::O);
 				game.registerPlayer(new checkers::AiPlayer(&game, getAiLevel("Enter the difficulty level for the AI")), checkers::PieceSide::X);
 				game.initialize();
 				winner = game.getPlayer(game.run())->getControllingSide();

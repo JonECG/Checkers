@@ -17,18 +17,11 @@ namespace checkers
 	{
 		static const int kNumHistoryRemembered = 32;
 
-		static const int kMaxMovesPerPiece = 4;
-		static const int kMoveArraySize = CheckerBoard::kNumPiecesPerPlayer*kMaxMovesPerPiece;
-
 		Game *game_;
 		int recurseLevels_;
 		int currentHistoryIndex_;
 		MoveHistory historyRemembered_[kNumHistoryRemembered];
 
-		// Used to traverse all jump paths, storing them in the moves array and updating outCurrentIndex to the current first availabe spot
-		void jumpExplorationRecursion(const Move& moveToExplore, CheckerPiece * target, Move * moves, int& outCurrentIndex) const;
-		// Find all valid moves for the given side, returns the number of moves available and stored starting from the index returned in outStartPosition
-		int findAllMoves(PieceSide side, Move * moves, int moveCapacity, int& outStartPosition) const;
 
 		// Evaluates the value of a given board state. Negative in favor of O and positive in favor of X
 		double evaluateBoardState(const CheckerBoard& board) const;

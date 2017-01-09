@@ -4,6 +4,7 @@
 namespace checkers
 {
 	class Move;
+	class Game;
 	class Player
 	{
 		PieceSide controllingSide_;
