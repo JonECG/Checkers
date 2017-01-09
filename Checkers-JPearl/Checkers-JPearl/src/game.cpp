@@ -57,6 +57,7 @@ namespace checkers
 			{
 				Move move = Move::parseFromString(moves[i]);
 				attemptMove(move);
+				currentPlayerTurn_ = (currentPlayerTurn_ + 1) % kNumPlayers;
 			}
 			catch (void* ignore) { ignore; }
 

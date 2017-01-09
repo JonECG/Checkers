@@ -186,7 +186,7 @@ namespace checkers
 		return score;
 	}
 
-	double AiPlayer::evaluateMove(const Move &move, PieceSide side, double previousBoardScore, int recurseLevels) const
+	double AiPlayer::evaluateMove(const Move &move, PieceSide side, double previousBoardScore, int recurseLevels, double &intrinsicScore) const
 	{
 		CheckerBoard simulatedBoard = CheckerBoard();
 		simulatedBoard.initialize(*game_->checkerBoard_);
@@ -199,6 +199,7 @@ namespace checkers
 
 		double boardScore = evaluateBoardState(simulatedBoard);
 		double score = boardScore - previousBoardScore;
+		intrinsicScore = score;
 
 		bool winningMove = game_->checkForWinCondition(side);
 		if (winningMove)
@@ -216,11 +217,19 @@ namespace checkers
 
 			findBestMove(moves, kMoveArraySize, otherSide, boardScore, recurseLevels - 1, futureBestScore, futureWorstScore);
 
-			static double kUncertaintyPenalty = 0.75;
+			static double kUncertaintyPenalty = 0.95;
 			double predictScore = futureBestScore * kUncertaintyPenalty;
 
-			// If the predicted score is even worse than the worst possible future score, clamp it to the worst score
-			if ((predictScore < futureWorstScore && predictScore < futureBestScore) || (predictScore > futureWorstScore && predictScore > futureBestScore) )
+#ifdef DEBUG
+			for (int i = recurseLevels; i <= recurseLevels_; i++)
+			{
+				std::cout << "    ";
+			}
+			std::cout << "Current Decision futureBestScore: " << futureBestScore << "  futureWorstScore: " << futureWorstScore << std::endl;
+#endif // DEBUG
+
+			// If the predicted score is even worse than the worst possible future score, clamp it to the worst score -- in the odd case all moves are the same weight uncertainty doesn't matter
+			if ((otherSide == PieceSide::O && predictScore > futureWorstScore) || (otherSide == PieceSide::X && predictScore < futureWorstScore) )
 				predictScore = futureWorstScore;
 
 			score += predictScore;
@@ -252,6 +261,8 @@ namespace checkers
 		int startIndex = 0;
 		int numPossibleMoves = findAllMoves(side, moves, capacity, startIndex);
 
+		double intrinsicScoreStore = 0;
+
 		if (numPossibleMoves == 0)
 		{
 			return nullptr;
@@ -261,8 +272,17 @@ namespace checkers
 		if (numPossibleMoves == 1)
 		{
 			// Early out if only one move available
-			outBestScore = evaluateMove(moves[startIndex], side, currentBoardScore, 0);
+			outBestScore = evaluateMove(moves[startIndex], side, currentBoardScore, recurseLevels, intrinsicScoreStore);
 			outWorstScore = outBestScore;
+
+#ifdef DEBUG
+			for (int i = recurseLevels; i < recurseLevels_; i++)
+			{
+				std::cout << "    ";
+			}
+			std::cout << "AI values " << ((side==PieceSide::O) ? "O:" : "X:") << moves[startIndex] << " at intrinsic " << intrinsicScoreStore << " and accumulatively " << outBestScore << std::endl;
+#endif // DEBUG
+
 			return moves + startIndex;
 		}
 		
@@ -274,7 +294,7 @@ namespace checkers
 			if (useHistory && isMoveInHistory(moves[i + startIndex]))
 				continue; // Skip evaluating move if it's been made recently
 
-			double value = evaluateMove(moves[i + startIndex], side, currentBoardScore, recurseLevels);
+			double value = evaluateMove(moves[i + startIndex], side, currentBoardScore, recurseLevels, intrinsicScoreStore);
 			// Find best value in favor of this side
 			if ( !found || ( (value > outBestScore) ^ (side == PieceSide::O) ) )
 			{
@@ -288,8 +308,11 @@ namespace checkers
 			}
 
 #ifdef DEBUG
-			if(useHistory)
-				std::cout << "AI values  " << moves[i + startIndex] << " at " << value << std::endl;
+			for (int i = recurseLevels; i < recurseLevels_; i++)
+			{
+				std::cout << "    ";
+			}
+			std::cout << "AI values " << ((side == PieceSide::O) ? "O:" : "X:") << moves[i + startIndex] << " at intrinsic " << intrinsicScoreStore << " and accumulatively " << value << std::endl;
 #endif // DEBUG
 
 			found = true;
