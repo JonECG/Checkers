@@ -11,7 +11,7 @@ namespace checkers
 		virtual ~Player();
 
 		// Requests a move from the player
-		virtual Move requestMove() const = 0;
+		virtual Move requestMove() = 0;
 
 		// Returns the symbol that represents the side this player controls
 		char getSymbol() const;

@@ -24,7 +24,7 @@ namespace checkers
 		const char * attemptMove(const Move& move);
 		const char * attemptMoveInternal(const Move& move, void * data);
 		// Returns whether the current player has won
-		bool checkForWinCondition() const;
+		bool checkForWinCondition(int playerIndex) const;
 	public:
 		Game();
 

@@ -22,7 +22,7 @@ namespace checkers
 		players_ = new Player*[2];
 		numPlayers_ = 2;
 
-		players_[PieceSide::O] = new AiPlayer(this, 3);
+		players_[PieceSide::O] = new AiPlayer(this, 5);
 		players_[PieceSide::X] = new AiPlayer(this, 3);
 
 		players_[PieceSide::O]->setControllingSide(PieceSide::O);
@@ -276,9 +276,9 @@ namespace checkers
 		return error;
 	}
 
-	bool Game::checkForWinCondition() const
+	bool Game::checkForWinCondition(int playerIndex) const
 	{
-		Player *otherPlayer = players_[(currentPlayerTurn_ + 1) % numPlayers_];
+		Player *otherPlayer = players_[(playerIndex + 1) % numPlayers_];
 		return (checkerBoard_->getNumPieces(otherPlayer->getControllingSide()) == 0 || !canAnyPieceMove(otherPlayer->getControllingSide()));
 	}
 
@@ -317,7 +317,7 @@ namespace checkers
 				}
 			}
 			
-			if (checkForWinCondition())
+			if (checkForWinCondition(currentPlayerTurn_))
 			{
 				gameIsRunning = false;
 			}

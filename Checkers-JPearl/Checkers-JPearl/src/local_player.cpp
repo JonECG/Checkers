@@ -7,7 +7,7 @@
 
 namespace checkers
 {
-	Move LocalPlayer::requestMove() const
+	Move LocalPlayer::requestMove()
 	{
 		Move result;
 

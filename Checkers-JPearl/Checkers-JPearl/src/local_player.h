@@ -6,6 +6,6 @@ namespace checkers
 	class LocalPlayer : public Player
 	{
 	public:
-		Move requestMove() const override;
+		Move requestMove() override;
 	};
 }
