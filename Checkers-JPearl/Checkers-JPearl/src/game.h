@@ -10,9 +10,10 @@ namespace checkers
 	{
 		friend class AiPlayer;
 
+		static const int kNumPlayers = 2;
+
 		CheckerBoard *checkerBoard_;
-		Player **players_;
-		unsigned char numPlayers_;
+		Player *players_[kNumPlayers];
 		unsigned char currentPlayerTurn_;
 
 		// Returns whether a piece has any valid moves from a given position. If no piece is given, it runs the check on the piece at the given position returning false if no piece is there. Can also restrict to only consider jump moves.
@@ -30,6 +31,9 @@ namespace checkers
 
 		void initialize();
 		void release();
+
+		// Transfers ownership of player to game to use. Game will then take over freeing memory of the player in release() or when another player is registerred to that spot
+		void registerPlayer(Player *player, PieceSide side);
 
 		// For debug -- will run moves
 		void runMoves(char ** moves, int numMoves);

@@ -287,8 +287,10 @@ namespace checkers
 				outWorstScore = value;
 			}
 
+#ifdef DEBUG
 			if(useHistory)
 				std::cout << "AI values  " << moves[i + startIndex] << " at " << value << std::endl;
+#endif // DEBUG
 
 			found = true;
 		}
@@ -319,12 +321,10 @@ namespace checkers
 			}
 		}
 
+#ifdef DEBUG
 		std::cout << "AI sees board state as  " << boardScore << std::endl;
 		std::cout << "AI thinks move score is " << score << std::endl;
-
-		// Adds a delay so the terminal is readable during AI turn
-		if( recurseLevels_ < 4 )
-			std::this_thread::sleep_for(std::chrono::milliseconds(300));
+#endif // DEBUG
 
 		return move;
 	}

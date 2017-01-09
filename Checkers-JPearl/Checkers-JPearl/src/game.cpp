@@ -19,11 +19,11 @@ namespace checkers
 	{
 		checkerBoard_ = new CheckerBoard();
 		checkerBoard_->initialize();
-		players_ = new Player*[2];
-		numPlayers_ = 2;
 
-		players_[PieceSide::O] = new AiPlayer(this, 5);
-		players_[PieceSide::X] = new AiPlayer(this, 5);
+		if(!players_[PieceSide::O])
+			players_[PieceSide::O] = new LocalPlayer();
+		if(!players_[PieceSide::X])
+			players_[PieceSide::X] = new LocalPlayer();
 
 		players_[PieceSide::O]->setControllingSide(PieceSide::O);
 		players_[PieceSide::X]->setControllingSide(PieceSide::X);
@@ -34,11 +34,19 @@ namespace checkers
 		checkerBoard_->release();
 		delete checkerBoard_;
 
-		for (int i = 0; i < numPlayers_; i++)
+		for (int i = 0; i < kNumPlayers; i++)
 		{
-			delete players_[i];
+			if (players_[i])
+				delete players_[i];
 		}
-		delete[] players_;
+	}
+
+	void Game::registerPlayer(Player * player, PieceSide side)
+	{
+		if (players_[side])
+			delete players_[side];
+
+		players_[side] = player;
 	}
 
 	void Game::runMoves(char ** moves, int numMoves)
@@ -283,7 +291,7 @@ namespace checkers
 
 	bool Game::checkForWinCondition(int playerIndex) const
 	{
-		Player *otherPlayer = players_[(playerIndex + 1) % numPlayers_];
+		Player *otherPlayer = players_[(playerIndex + 1) % kNumPlayers];
 		return (checkerBoard_->getNumPieces(otherPlayer->getControllingSide()) == 0 || !canAnyPieceMove(otherPlayer->getControllingSide()));
 	}
 
@@ -328,7 +336,7 @@ namespace checkers
 			}
 			else
 			{
-				currentPlayerTurn_ = (currentPlayerTurn_ + 1) % numPlayers_;
+				currentPlayerTurn_ = (currentPlayerTurn_ + 1) % kNumPlayers;
 			}
 
 			std::cout << std::endl << std::endl;
