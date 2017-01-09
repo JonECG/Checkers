@@ -244,8 +244,8 @@ namespace checkers
 		bool canKeepJumping = (hadJumpedDuringMove && canMovePieceAt(previousCoord, piece, true));
 		piece->setIsKing(wasKing);
 
-		//if (canKeepJumping)
-		//	return "If jumping, the piece cannot stop jumping until there are no more jumps available";
+		if (canKeepJumping)
+			return "If jumping, the piece cannot stop jumping until there are no more jumps available";
 
 		piece->setIsKing(treatAsKing);
 		checkerBoard_.removeAt(startCoord);

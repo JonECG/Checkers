@@ -8,10 +8,51 @@
 
 namespace checkers
 {
+	
 	AiPlayer::AiPlayer(Game * game, int recurseLevels)
 	{
 		game_ = game;
 		recurseLevels_ = recurseLevels;
+	}
+
+	void AiPlayer::jumpExplorationRecursion(const Move & moveToExplore, CheckerPiece * target, Move * moves, int * currentIndex) const
+	{
+		CompactCoordinate endCoord = moveToExplore.getCoordinate(moveToExplore.getNumCoords() - 1);
+		CompactCoordinate middleCoord = moveToExplore.getCoordinate(moveToExplore.getNumCoords() - 2);
+		middleCoord.column = (middleCoord.column + endCoord.column) / 2;
+		middleCoord.row = (middleCoord.row + endCoord.row) / 2;
+
+		CheckerPiece *jumpedPiece = game_->checkerBoard_.getPiece(middleCoord);
+		unsigned char prevMark = jumpedPiece->getMark();
+		jumpedPiece->setMark(1);
+
+		bool wasKing = target->getIsKing();
+		if ((target->getSide() == PieceSide::X && endCoord.row == 0) || (target->getSide() == PieceSide::O && endCoord.row == CheckerBoard::kNumRows - 1))
+			target->setIsKing(true);
+
+		const int maxJumpsPerPiece = 4;
+		CompactCoordinate results[maxJumpsPerPiece];
+		int numResults = maxJumpsPerPiece;
+
+		game_->canMovePieceAt(endCoord, target, true, true, results, &numResults);
+
+		if (numResults == 0) // End of this jump sequence
+		{
+			moves[(*currentIndex)++] = moveToExplore;
+		}
+		else
+		{
+			for (int i = 0; i < numResults; i++)
+			{
+				Move newMove = moveToExplore;
+				newMove.addCoordinate(results[i]);
+				jumpExplorationRecursion(newMove, target, moves, currentIndex);
+			}
+		}
+
+		
+		target->setIsKing(wasKing);
+		jumpedPiece->setMark(prevMark);
 	}
 
 	Move AiPlayer::requestMove() const
@@ -58,8 +99,8 @@ namespace checkers
 
 							if (distance == 2) // is a jump
 							{
-								// TODO: Recurse and find continued jumps
-								moves[currentJumpIndex++] = move;
+								// Perform depth first exploration of jumps backed by the unused portion of the move array
+								jumpExplorationRecursion(move, piece, moves, &currentJumpIndex);
 								canJump = true;
 							}
 						}
