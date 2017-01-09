@@ -56,6 +56,6 @@ namespace checkers
 		CheckerPiece* removeAt(CompactCoordinate coord);
 
 		// Inserts a textual representation of the board and its pieces into a stream
-		friend std::ostream& operator<< (std::ostream& stream, const CheckerBoard& matrix);
+		friend std::ostream& operator<< (std::ostream& stream, const CheckerBoard& board);
 	};
 }

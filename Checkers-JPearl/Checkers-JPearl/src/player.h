@@ -8,9 +8,10 @@ namespace checkers
 	{
 		PieceSide controllingSide_;
 	public:
+		virtual ~Player();
 
 		// Requests a move from the player
-		Move requestMove() const;
+		virtual Move requestMove() const = 0;
 
 		// Returns the symbol that represents the side this player controls
 		char getSymbol() const;

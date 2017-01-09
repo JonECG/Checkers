@@ -6,7 +6,15 @@
 
 namespace checkers
 {
-
+	Move::Move()
+	{
+		numCoords_ = 0;
+	}
+	void Move::addCoordinate(CompactCoordinate coord)
+	{
+		if (numCoords_ < kMaxCoordsPerMove)
+			moveCoords_[numCoords_++] = coord;
+	}
 	unsigned char Move::getNumCoords() const
 	{
 		return numCoords_;
@@ -85,4 +93,17 @@ namespace checkers
 		return result;
 	}
 
+	std::ostream & operator<<(std::ostream & stream, const Move & move)
+	{
+		stream << '<';
+		for (int i = 0; i < move.numCoords_; i++)
+		{
+			stream << (char)('A' + move.moveCoords_[i].column) << (char)('1' + move.moveCoords_[i].row);
+
+			if(i < move.numCoords_-1)
+				stream << ", ";
+		}
+		stream << '>';
+		return stream;
+	}
 }
