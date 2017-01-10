@@ -16,7 +16,7 @@ namespace checkers
 
 		unsigned short port_;
 		bool isRunning_;
-
+		
 		std::thread runningThread_;
 		std::mutex serverMutex_;
 

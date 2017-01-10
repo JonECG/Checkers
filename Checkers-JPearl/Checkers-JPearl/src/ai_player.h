@@ -12,7 +12,7 @@ namespace checkers
 		CompactCoordinate from, to;
 		CheckerPiece *piece;
 	};
-
+	
 	class AiPlayer : public Player
 	{
 		static const int kNumHistoryRemembered = 32;
