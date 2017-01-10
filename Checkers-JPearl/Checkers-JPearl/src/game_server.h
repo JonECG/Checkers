@@ -11,7 +11,6 @@ namespace checkers
 	class Connection;
 	class GameServer
 	{
-		static const int kMaxNumGames = 8;
 		static const int kMaxConnections = 8;
 
 		unsigned short port_;
@@ -21,7 +20,7 @@ namespace checkers
 		std::mutex serverMutex_;
 
 		int currentGameIndex_;
-		Game currentGames_[kMaxNumGames];
+		Game currentGames_[kMaxConnections];
 
 		ConnectionListener listener;
 

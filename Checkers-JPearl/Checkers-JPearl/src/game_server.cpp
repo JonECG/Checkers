@@ -37,11 +37,7 @@ namespace checkers
 				{
 					if (!Connection::listenTo(port_, listener, 1000))
 					{
-#ifdef DEBUG
-						char error[256];
-						Connection::getLastError(error, 256);
-						std::cout << "Server Error on creating listener: " << error << std::endl;
-#endif // DEBUG
+						printSockError("Server error on creating listener");
 					}
 				}
 				else
@@ -55,11 +51,7 @@ namespace checkers
 					}
 					else
 					{
-#ifdef DEBUG
-						char error[256];
-						Connection::getLastError(error, 256);
-						std::cout << "Server Error on accepting: " << error << std::endl;
-#endif // DEBUG
+						printSockError("Server error on accepting");
 					}
 				}
 			}
@@ -185,6 +177,7 @@ namespace checkers
 		serverMutex_.unlock();
 
 		startGame(currentGames_[gameIndex]);
+		player.disconnect(); // Disconnect players on game completion
 	}
 
 	void GameServer::startOnlineGame(Connection & playerOne, Connection & playerTwo)
@@ -199,6 +192,7 @@ namespace checkers
 		serverMutex_.unlock();
 
 		startGame(currentGames_[gameIndex]);
+		playerOne.disconnect(); playerTwo.disconnect(); // Disconnect players on game completion
 	}
 
 	void GameServer::start()

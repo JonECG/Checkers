@@ -143,11 +143,8 @@ namespace checkers
 				{
 					if (getLastError() == WSAECONNRESET)
 						isConnected_ = false;
-#if DEBUG
-					char error[256];
-					getLastError(error, 256);
-					std::cout << "Error hosting: " << isHosting_ << " on receive " << error << std::endl;
-#endif
+
+					printSockError("Error hosting : " << isHosting_ << " on receive");
 				}
 			}
 		}
@@ -285,16 +282,9 @@ namespace checkers
 
 		if (result == SOCKET_ERROR)
 		{
-#if DEBUG
-			char error[256];
-			getLastError(error, 256);
-			std::cout << "Error hosting: " << isHosting_ << " on send payload " << error << std::endl;
-#endif
+			printSockError("Error hosting : " << isHosting_ << " on send payload");
 			return false;
 		}
-#if DEBUG
-		std::cout << "Message " << ((type == MessageType::REQUEST_INPUT) ? "REQUEST_INPUT" : "SEND_MESSAGE") << " sent" << std::endl;
-#endif
 		return true;
 	}
 
@@ -342,11 +332,7 @@ namespace checkers
 			outType = (MessageType)buffer[0];
 			outLength = ntohs(*reinterpret_cast<unsigned short*>(buffer + 1));
 			memcpy_s(currentMessage_, kMaxMessageSize, buffer, outLength + 3);
-
-#if DEBUG
-			std::cout << "Message " << ((outType == MessageType::REQUEST_INPUT) ? "REQUEST_INPUT" : "SEND_MESSAGE") << " received" << std::endl;
-#endif	// DEBUG
-
+			
 			idxQueuedMessagesStart_ = (idxQueuedMessagesStart_ + 1) % kMaxNumberOfMessages;
 			result = currentMessage_ + 3;
 		}
