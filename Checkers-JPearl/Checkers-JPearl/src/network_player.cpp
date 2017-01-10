@@ -12,6 +12,11 @@ namespace checkers
 		connection_ = connection;
 	}
 
+	const char * NetworkPlayer::getDescriptor() const
+	{
+		return "Net ";
+	}
+
 	Move NetworkPlayer::requestMove()
 	{
 		Move result;

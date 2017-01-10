@@ -210,6 +210,11 @@ namespace checkers
 		return moves + bestMoveIndex;
 	}
 
+	const char * AiPlayer::getDescriptor() const
+	{
+		return "AI ";
+	}
+
 	Move AiPlayer::requestMove()
 	{
 		Move moves[Game::kMoveArraySize];

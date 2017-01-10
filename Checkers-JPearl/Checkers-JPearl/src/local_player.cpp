@@ -13,6 +13,11 @@ namespace checkers
 		game_ = game;
 	}
 
+	const char * LocalPlayer::getDescriptor() const
+	{
+		return "";
+	}
+
 	Move LocalPlayer::requestMove()
 	{
 		Move result;

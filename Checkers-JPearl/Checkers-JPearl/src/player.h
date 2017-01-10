@@ -11,6 +11,9 @@ namespace checkers
 	public:
 		virtual ~Player();
 
+		// Gets the descriptor for this player to be shown
+		virtual const char * getDescriptor() const = 0;
+
 		// Requests a move from the player
 		virtual Move requestMove() = 0;
 

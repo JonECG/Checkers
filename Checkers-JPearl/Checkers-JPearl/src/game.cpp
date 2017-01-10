@@ -407,8 +407,9 @@ namespace checkers
 				messageWriter() << "You can also forfeit by typing 'FORFEIT'\n";
 
 				// Request move from player 
-				messageWriter() << "player '" << players_[currentPlayerTurn_]->getSymbol() << "'> ";
+				messageWriter() << players_[currentPlayerTurn_]->getDescriptor() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "'> ";
 				sendMessageToPlayers();
+				players_[currentPlayerTurn_]->sendMessage("[YOU] > ");
 				Move move = players_[currentPlayerTurn_]->requestMove();
 
 				// Display current move
@@ -417,7 +418,7 @@ namespace checkers
 				// Check for forfeit
 				if (move.isForfeit())
 				{
-					messageWriter() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' forfeits...\n";
+					messageWriter() << players_[currentPlayerTurn_]->getDescriptor() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' forfeits...\n";
 					gameIsRunning = false;
 					break;
 				}
@@ -445,7 +446,7 @@ namespace checkers
 
 		// Write out final board state
 		messageWriter() << *checkerBoard_;
-		messageWriter() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' wins!\n";
+		messageWriter() << players_[currentPlayerTurn_]->getDescriptor() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' wins!\n";
 		sendMessageToPlayers();
 
 		return currentPlayerTurn_;
