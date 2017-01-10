@@ -17,14 +17,13 @@ namespace checkers
 	{
 		static const int kNumHistoryRemembered = 32;
 
-		Game *game_;
 		int recurseLevels_;
 		int currentHistoryIndex_;
 		MoveHistory historyRemembered_[kNumHistoryRemembered];
 
 
 		// Evaluates the value of a given board state. Negative in favor of O and positive in favor of X
-		double evaluateBoardState(const CheckerBoard& board) const;
+		double evaluateBoardState(const Game * game) const;
 		// Evaluates the value of a given move and how the game could play from that point on. Negative in favor of O and positive in favor of X
 		double evaluateMove(const Move& move, PieceSide side, double previousBoardScore, int recurseLevels, double &intrinsicScore) const;
 		// Returns whether the given move has already been made recently
@@ -32,7 +31,7 @@ namespace checkers
 		// Finds the best move in terms of possible value from all available moves. Returns the move most in favor of the given side and its score in the outBestScore parameter. Also keeps track of worst score
 		Move* findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double& outBestScore, double& outWorstScore, bool useHistory = false ) const;
 	public:
-		AiPlayer(Game * game, int recurseLevels);
+		AiPlayer(int recurseLevels);
 
 		const char * getDescriptor() const override;
 		Move requestMove() override;

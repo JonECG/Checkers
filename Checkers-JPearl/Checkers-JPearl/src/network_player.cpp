@@ -6,9 +6,8 @@
 #include "move.h"
 namespace checkers
 {
-	NetworkPlayer::NetworkPlayer(Game * game, Connection *connection)
+	NetworkPlayer::NetworkPlayer(Connection *connection)
 	{
-		game_ = game;
 		connection_ = connection;
 	}
 

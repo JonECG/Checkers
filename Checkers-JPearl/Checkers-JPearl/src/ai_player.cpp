@@ -8,13 +8,12 @@
 namespace checkers
 {
 	
-	AiPlayer::AiPlayer(Game * game, int recurseLevels)
+	AiPlayer::AiPlayer(int recurseLevels)
 	{
-		game_ = game;
 		recurseLevels_ = recurseLevels;
 	}
 
-	double AiPlayer::evaluateBoardState(const CheckerBoard & board) const
+	double AiPlayer::evaluateBoardState(const Game * game) const
 	{
 		// Valuing pieces
 		const double kPointsForMenAtHomeRow = 1;
@@ -35,9 +34,9 @@ namespace checkers
 				CompactCoordinate coord = CompactCoordinate();
 				coord.column = x; coord.row = y;
 
-				if (board.isCoordValid(coord))
+				if (game->checkerBoard_->isCoordValid(coord))
 				{
-					CheckerPiece *piece = board.getPiece(coord);
+					CheckerPiece *piece = game->checkerBoard_->getPiece(coord);
 					if (piece != nullptr)
 					{
 						PieceSide side = piece->getSide();
@@ -67,9 +66,9 @@ namespace checkers
 
 		// Evaluate Num Moves each
 		int count = 0;
-		game_->canAnyPieceMove(PieceSide::O, false, false, &count);
+		game->canAnyPieceMove(PieceSide::O, false, false, &count);
 		score -= count * kPointsForMoveAvailable;
-		game_->canAnyPieceMove(PieceSide::X, false, false, &count);
+		game->canAnyPieceMove(PieceSide::X, false, false, &count);
 		score += count * kPointsForMoveAvailable;
 
 		return score;
@@ -77,20 +76,22 @@ namespace checkers
 
 	double AiPlayer::evaluateMove(const Move &move, PieceSide side, double previousBoardScore, int recurseLevels, double &intrinsicScore) const
 	{
+		Game * game = getGame();
+
 		CheckerBoard simulatedBoard = CheckerBoard();
-		simulatedBoard.initialize(*game_->checkerBoard_);
+		simulatedBoard.initialize(*game->checkerBoard_);
 
 		// Sneakily swap the checkerboard from the game with the simulated board -- switch it back before stack frame is popped
-		CheckerBoard *originalBoard = game_->checkerBoard_;
-		game_->checkerBoard_ = &simulatedBoard;
+		CheckerBoard *originalBoard = game->checkerBoard_;
+		game->checkerBoard_ = &simulatedBoard;
 
-		game_->attemptMove(move);
+		game->attemptMove(move);
 
-		double boardScore = evaluateBoardState(simulatedBoard);
+		double boardScore = evaluateBoardState(game);
 		double score = boardScore - previousBoardScore;
 		intrinsicScore = score;
 
-		bool winningMove = game_->checkForWinCondition(side);
+		bool winningMove = game->checkForWinCondition(side);
 		if (winningMove)
 			score += (side == PieceSide::O) ? -100 : 100;
 
@@ -124,7 +125,7 @@ namespace checkers
 			score += predictScore;
 		}
 
-		game_->checkerBoard_ = originalBoard;
+		game->checkerBoard_ = originalBoard;
 		simulatedBoard.release();
 
 		return score;
@@ -132,7 +133,7 @@ namespace checkers
 
 	bool AiPlayer::isMoveInHistory(const Move & move) const
 	{
-		CheckerPiece *piece = game_->checkerBoard_->getPiece(move.getCoordinate(0));
+		CheckerPiece *piece = getGame()->checkerBoard_->getPiece(move.getCoordinate(0));
 		for (int i = 0; i < kNumHistoryRemembered; i++)
 		{
 			if (historyRemembered_[i].from.column == move.getCoordinate(0).column && 
@@ -148,7 +149,7 @@ namespace checkers
 	Move * AiPlayer::findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double &outBestScore, double & outWorstScore, bool useHistory) const
 	{
 		int startIndex = 0;
-		int numPossibleMoves = game_->findAllMoves(side, moves, capacity, startIndex);
+		int numPossibleMoves = getGame()->findAllMoves(side, moves, capacity, startIndex);
 
 		double intrinsicScoreStore = 0;
 
@@ -220,7 +221,7 @@ namespace checkers
 		Move moves[Game::kMoveArraySize];
 		double score = 0;
 		double worstScore = 0;
-		double boardScore = evaluateBoardState(*game_->checkerBoard_);
+		double boardScore = evaluateBoardState(getGame());
  		Move move = *findBestMove(moves, Game::kMoveArraySize, getControllingSide(), boardScore, recurseLevels_, score, worstScore, true);
 
 		// If this was an adjacent move, add it to the history
@@ -232,7 +233,7 @@ namespace checkers
 			{
 				MoveHistory history = MoveHistory();
 				history.from = from; history.to = to;
-				history.piece = game_->checkerBoard_->getPiece(from);
+				history.piece = getGame()->checkerBoard_->getPiece(from);
 				historyRemembered_[currentHistoryIndex_] = history;
 				currentHistoryIndex_ = (currentHistoryIndex_ + 1) % kNumHistoryRemembered;
 			}

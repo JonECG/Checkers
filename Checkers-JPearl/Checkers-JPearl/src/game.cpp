@@ -21,13 +21,14 @@ namespace checkers
 		checkerBoard_ = new CheckerBoard();
 		checkerBoard_->initialize();
 
-		if(!players_[PieceSide::O])
-			players_[PieceSide::O] = new LocalPlayer(this);
-		if(!players_[PieceSide::X])
-			players_[PieceSide::X] = new LocalPlayer(this);
+		for (int i = 0; i < kNumPlayers; i++)
+		{
+			if (!players_[i])
+				players_[i] = new LocalPlayer();
 
-		players_[PieceSide::O]->setControllingSide(PieceSide::O);
-		players_[PieceSide::X]->setControllingSide(PieceSide::X);
+			players_[i]->setControllingSide((PieceSide)i);
+			players_[i]->setGame(this);
+		}
 	}
 
 	void Game::release()
@@ -68,6 +69,7 @@ namespace checkers
 
 		players_[side] = player;
 		players_[side]->setControllingSide(side);
+		players_[side]->setGame(this);
 	}
 
 	void Game::runMoves(char ** moves, int numMoves)

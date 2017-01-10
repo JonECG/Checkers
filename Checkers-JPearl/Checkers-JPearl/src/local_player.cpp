@@ -8,11 +8,6 @@
 
 namespace checkers
 {
-	LocalPlayer::LocalPlayer(Game * game)
-	{
-		game_ = game;
-	}
-
 	const char * LocalPlayer::getDescriptor() const
 	{
 		return "";

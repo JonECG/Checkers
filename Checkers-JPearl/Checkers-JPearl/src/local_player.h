@@ -5,9 +5,7 @@ namespace checkers
 {
 	class LocalPlayer : public Player
 	{
-		Game *game_;
 	public:
-		LocalPlayer(Game *game);
 		const char * getDescriptor() const override;
 		Move requestMove() override;
 		void sendMessage(const char * message) const override;

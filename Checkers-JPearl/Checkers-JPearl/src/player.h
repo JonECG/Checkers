@@ -7,6 +7,7 @@ namespace checkers
 	class Game;
 	class Player
 	{
+		Game *game_;
 		PieceSide controllingSide_;
 	public:
 		virtual ~Player();
@@ -22,7 +23,11 @@ namespace checkers
 
 		// Returns the symbol that represents the side this player controls
 		char getSymbol() const;
+
 		PieceSide getControllingSide() const;
 		void setControllingSide(PieceSide side);
+
+		Game* getGame() const;
+		void setGame(Game *game);
 	};
 } 

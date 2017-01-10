@@ -171,8 +171,8 @@ namespace checkers
 
 		int gameIndex = currentGameIndex_++;
 		Game *game = currentGames_ + gameIndex;
-		game->registerPlayer(new NetworkPlayer(game, &player), PieceSide::O);
-		game->registerPlayer(new AiPlayer(game, aiDifficuluty), PieceSide::X);
+		game->registerPlayer(new NetworkPlayer( &player), PieceSide::O);
+		game->registerPlayer(new AiPlayer(aiDifficuluty), PieceSide::X);
 
 		serverMutex_.unlock();
 
@@ -186,8 +186,8 @@ namespace checkers
 
 		int gameIndex = currentGameIndex_++;
 		Game *game = currentGames_ + gameIndex;
-		game->registerPlayer(new NetworkPlayer(game, &playerOne), PieceSide::O);
-		game->registerPlayer(new NetworkPlayer(game, &playerTwo), PieceSide::X);
+		game->registerPlayer(new NetworkPlayer(&playerOne), PieceSide::O);
+		game->registerPlayer(new NetworkPlayer(&playerTwo), PieceSide::X);
 
 		serverMutex_.unlock();
 

@@ -21,4 +21,13 @@ namespace checkers
 		controllingSide_ = side;
 	}
 
+	Game * Player::getGame() const
+	{
+		return game_;
+	}
+	void Player::setGame(Game * game)
+	{
+		game_ = game;
+	}
+
 }
