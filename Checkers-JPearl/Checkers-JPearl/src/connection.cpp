@@ -203,14 +203,14 @@ namespace checkers
 
 	bool Connection::sendPayload(MessageType type, const char * data, unsigned int length) const
 	{
-		// Type		CHAR
-		// Length	CHAR
-		// Message	CHAR*
+		// Type		CHAR	1
+		// Length	SHORT	2 hton
+		// Message	CHAR*	X
 
 		if (data == nullptr)
 			length = 0;
 
-		if (length + 2 > kMaxMessageSize)
+		if (length + 3 > kMaxMessageSize)
 			return false; // Too long of a message
 
 		char buffer[kMaxMessageSize];
@@ -218,7 +218,9 @@ namespace checkers
 		int index = 0;
 
 		buffer[index++] = type;
-		buffer[index++] = (char) length;
+		*(reinterpret_cast<unsigned short*>(buffer+index)) = htons( (unsigned short) length );
+		index += 2;
+
 		for (unsigned int i = 0; i < length; i++)
 		{
 			buffer[index++] = data[i];
@@ -273,15 +275,15 @@ namespace checkers
 
 		return isMessageReady_;
 	}
-
+	
 	const char * Connection::processMessage(MessageType & outType, unsigned int & outLength)
 	{
 		if (isMessageReady_)
 		{
 			outType = (MessageType) currentMessage_[0];
-			outLength = (unsigned int) currentMessage_[1];
+			outLength = ntohs(*reinterpret_cast<unsigned short*>(currentMessage_+1));
 			isMessageReady_ = false;
-			return currentMessage_ + 2;
+			return currentMessage_ + 3;
 		}
 		return nullptr;
 	}

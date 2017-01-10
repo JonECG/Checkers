@@ -11,7 +11,7 @@ namespace checkers
 	};
 	class Connection
 	{
-		static const int kMaxMessageSize = 256;
+		static const int kMaxMessageSize = 2560;
 		static bool isInit_;
 
 		unsigned int socket_;

@@ -1,5 +1,7 @@
 #include "network_player.h"
 
+#include <sstream>
+
 #include "connection.h"
 #include "move.h"
 namespace checkers
@@ -12,7 +14,29 @@ namespace checkers
 
 	Move NetworkPlayer::requestMove()
 	{
-		return Move();
+		Move result;
+
+		bool moveSuccessfullyMade = false;
+
+		while (!moveSuccessfullyMade)
+		{
+			
+			std::string input;
+			connection_->requestInput(input);
+
+			try
+			{
+				result = checkers::Move::parseFromString(input.c_str());
+				moveSuccessfullyMade = true;
+			}
+			catch (std::exception& e)
+			{
+				std::ostringstream os = std::ostringstream();
+				os << "Invalid formatting: " << e.what() << "\nTry again > ";
+				connection_->sendMessage(os.str());
+			}
+		}
+		return result;
 	}
 	void NetworkPlayer::sendMessage(const char * message) const
 	{
