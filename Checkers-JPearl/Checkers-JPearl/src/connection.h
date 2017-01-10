@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <mutex>
 
 namespace checkers
 {
@@ -24,7 +25,9 @@ namespace checkers
 		char queuedMessages_[kMaxMessageSize * kMaxNumberOfMessages];
 		char currentMessage_[kMaxMessageSize];
 
-		bool sendPayload(MessageType type, const char * data = nullptr, unsigned int length = 0) const;
+		std::mutex sendMutex, processMutex;
+
+		bool sendPayload(MessageType type, const char * data = nullptr, unsigned int length = 0);
 
 		// Starts running this connection on a new thread and keeping track of new messages
 		void run();
@@ -33,7 +36,9 @@ namespace checkers
 		static void init();
 		static void shutdown();
 
-		void getLastError(char * buffer, int bufferLength);
+		Connection();
+
+		int getLastError(char * buffer = nullptr, int bufferLength = 0) const;
 
 		// Listens on the port given for any incoming connection and will write it to the given outConnection parameter. Returns whether a connection was found before timeout (in milliseconds)
 		static bool listenTo(unsigned short port, Connection &outConnection, unsigned int timeout = 1000);
@@ -43,7 +48,7 @@ namespace checkers
 		void disconnect();
 
 		// Sends a message to the other end. Returns whether it was successful
-		bool sendMessage(std::string message) const;
+		bool sendMessage(std::string message);
 
 		// Requests a message from the other end. Returns whether it was successful
 		bool requestInput(std::string &outResponse);

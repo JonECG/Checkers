@@ -101,7 +101,8 @@ int main(int argc, char ** argv)
 			"2) Play a game against AI" << std::endl <<
 			"3) Watch a game played between AIs" << std::endl <<
 			( gameServer.isRunning() ? "4) Stop Network Game Server" : "4) Start Network Game Server" ) << std::endl <<
-			"5) Quit" << std::endl <<
+			"5) Start as Client" << std::endl <<
+			"6) Quit" << std::endl <<
 			"Your Choice > ";
 
 		std::string choice;
@@ -135,10 +136,11 @@ int main(int argc, char ** argv)
 					gameServer.stop();
 				else
 					gameServer.start();
-
-				dummyClient();
 				break;
 			case '5':
+				dummyClient();
+				break;
+			case '6':
 				repeat = false;
 				break;
 			default:

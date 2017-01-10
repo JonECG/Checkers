@@ -1,6 +1,7 @@
 #include "connection.h"
 
 #include <thread>
+#include <iostream>
 
 #ifdef _WIN32
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -13,7 +14,6 @@
 	#include <netinet/ip.h>
 	#include <arpa/inet.h>
 	#include <netdb.h>
-	#include <iostream>
 	#include <unistd.h> 
 #endif
 
@@ -59,9 +59,19 @@ namespace checkers
 				isInit_ = false;
 		}
 	}
-	void Connection::getLastError(char * buffer, int bufferLength)
+	int Connection::getLastError(char * buffer, int bufferLength) const
 	{
-		strerror_s(buffer, bufferLength, errno);
+		int wsaError = WSAGetLastError();
+
+		if (buffer)
+		{
+			LPSTR errString = NULL;
+			int size = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, 0, wsaError, 0, (LPSTR)&errString, 0, 0);
+			memcpy_s(buffer, bufferLength, errString, size + 1);
+			LocalFree(errString);
+		}
+
+		return wsaError;
 	}
 	void setAddressIp( SOCKADDR_IN &address, const char * ip )
 	{
@@ -77,16 +87,23 @@ namespace checkers
 	{
 		isInit_ = false;
 	}
-	void Connection::getLastError(char * buffer, int bufferLength)
+	int Connection::getLastError(char * buffer, int bufferLength) const
 	{
-		const char * error = strerror(errno);
-		for (int i = 0; i < bufferLength - 1; i++)
+		int errorId = errno;
+
+		if (buffer)
 		{
-			buffer[i] = error[i];
-			if (error[i] == '\0')
-				return;
+			const char * error = strerror(errorId);
+			for (int i = 0; i < bufferLength - 1; i++)
+			{
+				buffer[i] = error[i];
+				if (error[i] == '\0')
+					return;
+			}
+			buffer[bufferLength - 1] = '\0';
 		}
-		buffer[bufferLength - 1] = '\0';
+
+		return errorId;
 	}
 	void setAddressIp( SOCKADDR_IN &address, const char * ip )
 	{
@@ -94,8 +111,16 @@ namespace checkers
 	}
 #endif
 
+	Connection::Connection()
+	{
+		idxQueuedMessagesStart_ = 0;
+		idxQueuedMessagesEnd_ = 0;
+	}
+
 	void Connection::run()
 	{
+		idxQueuedMessagesStart_ = 0;
+		idxQueuedMessagesEnd_ = 0;
 		std::thread runningThread = std::thread([this] {runLoop(); });
 		runningThread.detach();
 	}
@@ -105,12 +130,24 @@ namespace checkers
 		while (isConnected_)
 		{
 			// As long as we haven't wrapped fully around the circular buffer
-			while (idxQueuedMessagesStart_ != (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages)
+			if (idxQueuedMessagesStart_ != (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages)
 			{
 				char * packet = queuedMessages_ + kMaxMessageSize * idxQueuedMessagesEnd_;
 				if (recv(socket_, packet, kMaxMessageSize, 0) != SOCKET_ERROR)
 				{
+					processMutex.lock();
 					idxQueuedMessagesEnd_ = (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages;
+					processMutex.unlock();
+				}
+				else
+				{
+					if (getLastError() == WSAECONNRESET)
+						isConnected_ = false;
+#if DEBUG
+					char error[256];
+					getLastError(error, 256);
+					std::cout << "Error hosting: " << isHosting_ << " on receive " << error << std::endl;
+#endif
 				}
 			}
 		}
@@ -225,11 +262,14 @@ namespace checkers
 		}
 	}
 
-	bool Connection::sendPayload(MessageType type, const char * data, unsigned int length) const
+	bool Connection::sendPayload(MessageType type, const char * data, unsigned int length)
 	{
 		// Type		CHAR	1
 		// Length	SHORT	2 hton
 		// Message	CHAR*	X
+
+		if (!isConnected_)
+			return false;
 
 		if (data == nullptr)
 			length = 0;
@@ -250,15 +290,26 @@ namespace checkers
 			buffer[index++] = data[i];
 		}
 
-		if (send(socket_, buffer, index, 0) == SOCKET_ERROR)
+		sendMutex.lock();
+		int result = send(socket_, buffer, index, 0);
+		sendMutex.unlock();
+
+		if (result == SOCKET_ERROR)
 		{
+#if DEBUG
+			char error[256];
+			getLastError(error, 256);
+			std::cout << "Error hosting: " << isHosting_ << " on send payload " << error << std::endl;
+#endif
 			return false;
 		}
-
+#if DEBUG
+		std::cout << "Message " << ((type == MessageType::REQUEST_INPUT) ? "REQUEST_INPUT" : "SEND_MESSAGE") << " sent" << std::endl;
+#endif
 		return true;
 	}
 
-	bool Connection::sendMessage(std::string message) const
+	bool Connection::sendMessage(std::string message)
 	{
 		return sendPayload(MessageType::SEND_MESSAGE, message.c_str(), message.length() + 1);
 	}
@@ -294,17 +345,24 @@ namespace checkers
 	
 	const char * Connection::processMessage(MessageType & outType, unsigned int & outLength)
 	{
+		processMutex.lock();
+		const char * result = nullptr;
 		if (hasMessageWaiting())
 		{
 			char * buffer = queuedMessages_ + kMaxMessageSize * idxQueuedMessagesStart_;
 			outType = (MessageType)buffer[0];
 			outLength = ntohs(*reinterpret_cast<unsigned short*>(buffer + 1));
 			memcpy_s(currentMessage_, kMaxMessageSize, buffer, outLength + 3);
-			
+
+#if DEBUG
+			std::cout << "Message " << ((outType == MessageType::REQUEST_INPUT) ? "REQUEST_INPUT" : "SEND_MESSAGE") << " received" << std::endl;
+#endif	// DEBUG
+
 			idxQueuedMessagesStart_ = (idxQueuedMessagesStart_ + 1) % kMaxNumberOfMessages;
-			return currentMessage_ + 3;
+			result = currentMessage_ + 3;
 		}
-		return nullptr;
+		processMutex.unlock();
+		return result;
 	}
 
 	bool Connection::isConnected() const
