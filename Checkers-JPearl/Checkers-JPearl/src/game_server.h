@@ -23,9 +23,11 @@ namespace checkers
 		int currentGameIndex_;
 		Game currentGames_[kMaxNumGames];
 
-		int currentConnectionIndex_;
-		Connection currentConnections_[kMaxConnections];
+		ConnectionListener listener;
 
+		int currentConnectionIndex_;
+		std::thread instances_[kMaxConnections];
+		Connection currentConnections_[kMaxConnections];
 		Connection *connectionWaitingForOnlineGame_;
 
 		void run();

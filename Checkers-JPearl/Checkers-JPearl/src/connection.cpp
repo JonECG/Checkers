@@ -59,7 +59,7 @@ namespace checkers
 				isInit_ = false;
 		}
 	}
-	int Connection::getLastError(char * buffer, int bufferLength) const
+	int Connection::getLastError(char * buffer, int bufferLength)
 	{
 		int wsaError = WSAGetLastError();
 
@@ -87,7 +87,7 @@ namespace checkers
 	{
 		isInit_ = false;
 	}
-	int Connection::getLastError(char * buffer, int bufferLength) const
+	int Connection::getLastError(char * buffer, int bufferLength)
 	{
 		int errorId = errno;
 
@@ -151,10 +151,10 @@ namespace checkers
 				}
 			}
 		}
-		closesocket(socket_);
+		disconnect();
 	}
 
-	bool Connection::listenTo(unsigned short port, Connection &outConnection, unsigned int timeout)
+	bool Connection::listenTo(unsigned short port, ConnectionListener &outListener, unsigned int timeout)
 	{
 		timeout; // TODO: nonblocking sockets
  
@@ -195,21 +195,10 @@ namespace checkers
 			return false;
 		}
 
-		SOCKET sockIncomingConnection = accept(sockListen, (SOCKADDR*)&address, &addressSize);
-		if (sockIncomingConnection != INVALID_SOCKET)
-		{
-			outConnection.isConnected_ = true;
-			outConnection.socket_ = sockIncomingConnection;
-			outConnection.isHosting_ = true;
-			outConnection.run();
-			closesocket(sockListen);
-			return true;
-		}
+		outListener.socket_ = sockListen;
+		outListener.isListening_ = true;
 		
-		// Clean up
-		closesocket(sockListen);
-
-		return false;
+		return true;
 	}
 
 	bool Connection::connectTo(std::string ip, unsigned short port, Connection &outConnection, unsigned int timeout)
@@ -373,6 +362,43 @@ namespace checkers
 	bool Connection::isHosting() const
 	{
 		return isHosting_;
+	}
+
+	void ConnectionListener::end()
+	{
+		if (isListening_)
+		{
+			closesocket(socket_);
+			isListening_ = false;
+		}
+	}
+
+	bool ConnectionListener::isListening() const
+	{
+		return isListening_;
+	}
+
+	bool ConnectionListener::acceptConnection(Connection & outConnection, unsigned int timeout)
+	{
+		timeout;
+
+		SOCKADDR_IN address;
+		AddressLength addressSize = sizeof(address);
+
+		SOCKET sockIncomingConnection = accept(socket_, (SOCKADDR*)&address, &addressSize);
+		if (sockIncomingConnection != INVALID_SOCKET)
+		{
+			outConnection.isConnected_ = true;
+			outConnection.socket_ = sockIncomingConnection;
+			outConnection.isHosting_ = true;
+			outConnection.run();
+			return true;
+		}
+		else
+		{
+			end();
+			return false;
+		}
 	}
 
 }

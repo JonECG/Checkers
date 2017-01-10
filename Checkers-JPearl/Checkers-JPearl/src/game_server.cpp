@@ -8,7 +8,6 @@
 namespace checkers
 {
 	
-
 	GameServer::GameServer(unsigned short port)
 	{
 		port_ = port;
@@ -33,36 +32,59 @@ namespace checkers
 		{
 			if (currentConnectionIndex_ < kMaxConnections)
 			{
-				Connection &potential = currentConnections_[currentConnectionIndex_];
-				if (Connection::listenTo(port_, potential, 1000))
+				// Start Listening if we aren't
+				if (!listener.isListening())
 				{
-					currentConnectionIndex_++;
-					std::thread connectionInit = std::thread([this, &potential] {initConnection(potential); });
-					connectionInit.detach();
+					if (!Connection::listenTo(port_, listener, 1000))
+					{
+#ifdef DEBUG
+						char error[256];
+						Connection::getLastError(error, 256);
+						std::cout << "Server Error on creating listener: " << error << std::endl;
+#endif // DEBUG
+					}
 				}
-                else
-                {
-                    char error[256];
-                    potential.getLastError(error,256);
-                    std::cout << "Server Error on listen: " << error << std::endl;
-                    currentConnectionIndex_ = 5000;
-                }
+				else
+				{
+					// Try to accept a new connection
+					Connection &potential = currentConnections_[currentConnectionIndex_];
+					if (listener.acceptConnection(potential, 1000))
+					{
+						instances_[currentConnectionIndex_] = std::thread([this, &potential] {initConnection(potential);});
+						currentConnectionIndex_++;
+					}
+					else
+					{
+#ifdef DEBUG
+						char error[256];
+						Connection::getLastError(error, 256);
+						std::cout << "Server Error on accepting: " << error << std::endl;
+#endif // DEBUG
+					}
+				}
 			}
 		}
 
 		// Shutdown
+
+		if (listener.isListening())
+			listener.end();
+
 		for (int i = 0; i < currentConnectionIndex_; i++)
 		{
 			if(currentConnections_[i].isConnected())
 				currentConnections_[i].disconnect();
+
+			instances_[i].join();
 		}
+		
 	}
 
 	void GameServer::initConnection(Connection & connection)
 	{
 		bool receivedValidInput = false;
 
-		while (!receivedValidInput)
+		while (connection.isConnected() && !receivedValidInput)
 		{
 			if (!connection.sendMessage(
 				"Welcome to the server. What would you like to do?\n"
@@ -94,7 +116,7 @@ namespace checkers
 						bool receivedValidAILevel = false;
 						int levelResult = 0;
 
-						while (!receivedValidAILevel)
+						while (connection.isConnected() && !receivedValidAILevel)
 						{
 							if (!connection.sendMessage("Enter the difficulty level for the AI\nEnter 0-9 > "))
 								continue;
@@ -144,10 +166,11 @@ namespace checkers
 
 	void GameServer::startGame(Game & game)
 	{
-		serverMutex_.lock();
-		std::thread gameThread = std::thread([this, &game] { game.initialize(); game.run(); game.release(); });
-		gameThread.detach();
-		serverMutex_.unlock();
+		// The instance now belongs to the connection that started the game.
+		// Which is the connection that requested the AI game or the 2nd connection into an online game
+		game.initialize();
+		game.run();
+		game.release();
 	}
 
 	void GameServer::startAiGame(Connection & player, int aiDifficuluty)
@@ -195,6 +218,7 @@ namespace checkers
 		if (isRunning_)
 		{
 			isRunning_ = false;
+			listener.end();
 			serverMutex_.unlock();
 			runningThread_.join();
 		}
@@ -202,7 +226,6 @@ namespace checkers
 		{
 			serverMutex_.unlock();
 		}
-		serverMutex_.unlock();
 	}
 
 	bool GameServer::isRunning()

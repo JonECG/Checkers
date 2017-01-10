@@ -10,6 +10,7 @@ namespace checkers
 		SEND_MESSAGE = 0,
 		REQUEST_INPUT = 1
 	};
+	class ConnectionListener;
 	class Connection
 	{
 		static const int kMaxMessageSize = 1280;
@@ -35,13 +36,13 @@ namespace checkers
 	public:
 		static void init();
 		static void shutdown();
+		static int getLastError(char * buffer = nullptr, int bufferLength = 0);
+
 
 		Connection();
-
-		int getLastError(char * buffer = nullptr, int bufferLength = 0) const;
-
+		
 		// Listens on the port given for any incoming connection and will write it to the given outConnection parameter. Returns whether a connection was found before timeout (in milliseconds)
-		static bool listenTo(unsigned short port, Connection &outConnection, unsigned int timeout = 1000);
+		static bool listenTo(unsigned short port, ConnectionListener &outListener, unsigned int timeout = 1000);
 
 		static bool connectTo(std::string ip, unsigned short port, Connection &outConnection, unsigned int timeout = 1000);
 
@@ -61,5 +62,19 @@ namespace checkers
 
 		bool isConnected() const;
 		bool isHosting() const;
+
+		friend class ConnectionListener;
+	};
+	class ConnectionListener
+	{
+		unsigned int socket_;
+		bool isListening_;
+	public:
+		void end();
+
+		bool isListening() const;
+		bool acceptConnection(Connection &outConnection, unsigned int timeout = 1000);
+	
+		friend class Connection;
 	};
 }
