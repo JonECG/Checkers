@@ -52,7 +52,7 @@ namespace checkers
 							double startRow = (side == PieceSide::O) ? 0 : CheckerBoard::kNumRows - 1;
 							double endRow = (side == PieceSide::O) ? CheckerBoard::kNumRows - 1 : 0;
 							double progress = (y - startRow) / (endRow - startRow);
-							score += multiplier * std::abs(kPointsForMenAtHomeRow + (kPointsForMenAtKingRow - kPointsForMenAtHomeRow)*(progress));
+							score += multiplier * (kPointsForMenAtHomeRow + (kPointsForMenAtKingRow - kPointsForMenAtHomeRow)*(progress));
 						}
 
 						// Manhatten distance

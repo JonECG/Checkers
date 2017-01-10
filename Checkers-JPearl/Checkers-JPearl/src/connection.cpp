@@ -5,6 +5,7 @@
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
 	#include <winsock2.h>
 #else
+	#include <string.h>
 	#include <sys/types.h>
 	#include <sys/socket.h>
 	#include <netinet/in.h>
@@ -16,7 +17,10 @@
 #endif
 
 // Using WinSock interface, some defines here to keep things clean below
-#ifndef _WIN32
+#ifdef _WIN32
+	#define AddressLength int
+#else
+	#define AddressLength unsigned int
 	#define INVALID_SOCKET -1
 	#define SOCKET_ERROR -1
 	#define closesocket close
@@ -58,6 +62,10 @@ namespace checkers
 	{
 		strerror_s(buffer, bufferLength, errno);
 	}
+	void setAddressIp( SOCKADDR_IN &address, const char * ip )
+	{
+		address.sin_addr.S_un.S_addr = inet_addr(ip);
+	}
 #else
 	void Connection::init()
 	{
@@ -79,44 +87,45 @@ namespace checkers
 		}
 		buffer[bufferLength - 1] = '\0';
 	}
+	void setAddressIp( SOCKADDR_IN &address, const char * ip )
+	{
+		inet_aton(ip, &address.sin_addr);
+	}
 #endif
 
 	bool Connection::listenTo(unsigned short port, Connection &outConnection, unsigned int timeout)
 	{
 		timeout; // TODO: nonblocking sockets
-
+ 
 		if (!isInit_)
 			init();
 		
-		SOCKADDR_IN address;
-		int addressSize = sizeof(address);
+		
 
-		SOCKET sockListen, sockConnection;
+		SOCKET sockListen;
 
 		// Simple reliable TCP connection
-		sockConnection = socket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP);
-		if (sockConnection == INVALID_SOCKET)
-		{
-			return false;
-		}
-
-		address.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
-		address.sin_family = AF_INET;
-		address.sin_port = htons(port);
-
-		sockListen = socket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP);
+		sockListen = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (sockListen == INVALID_SOCKET)
 		{
 			// Clean up
-			closesocket(sockConnection);
 			return false;
 		}
 
-		if (bind(sockListen, (SOCKADDR*)&address, sizeof(address)) == SOCKET_ERROR)
+		SOCKADDR_IN address;
+		AddressLength addressSize = sizeof(address);
+ 
+		setAddressIp( address, "127.0.0.1" );
+		address.sin_family = AF_INET;
+		address.sin_port = htons(port);
+ 
+		int reuseAddress = 1;
+		setsockopt( sockListen, SOL_SOCKET, SO_REUSEADDR, (char*) &reuseAddress, sizeof reuseAddress );
+
+		if (bind(sockListen, (SOCKADDR*)&address, addressSize) == SOCKET_ERROR)
 		{
 			// Clean up
 			closesocket(sockListen);
-			closesocket(sockConnection);
 			return false;
 		}
 		
@@ -124,23 +133,21 @@ namespace checkers
 		{
 			// Clean up
 			closesocket(sockListen);
-			closesocket(sockConnection);
 			return false;
 		}
 
-
 		SOCKET sockIncomingConnection = accept(sockListen, (SOCKADDR*)&address, &addressSize);
-		if (sockConnection != INVALID_SOCKET)
+		if (sockIncomingConnection != INVALID_SOCKET)
 		{
 			outConnection.isConnected_ = true;
 			outConnection.socket_ = sockIncomingConnection;
 			outConnection.isHosting_ = true;
+			closesocket(sockListen);
 			return true;
 		}
 		
 		// Clean up
 		closesocket(sockListen);
-		closesocket(sockConnection);
 
 		return false;
 	}
@@ -151,17 +158,17 @@ namespace checkers
 
 		if (!isInit_)
 			init();
-
+ 
 		SOCKET sock;
 		// Simple reliable TCP connection
-		sock = socket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP);
+		sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (sock == INVALID_SOCKET)
 		{
 			return false;
 		}
-
+ 
 		SOCKADDR_IN address;
-		address.sin_addr.S_un.S_addr = inet_addr(ip.c_str());
+		setAddressIp(address, ip.c_str());
 		address.sin_family = AF_INET;
 		address.sin_port = htons(port);
 
@@ -217,7 +224,7 @@ namespace checkers
 			buffer[index++] = data[i];
 		}
 
-		if (send(socket_, buffer, index, NULL) == SOCKET_ERROR)
+		if (send(socket_, buffer, index, 0) == SOCKET_ERROR)
 		{
 			return false;
 		}
@@ -258,7 +265,7 @@ namespace checkers
 	{
 		if (!isMessageReady_)
 		{
-			if (recv(socket_, currentMessage_, kMaxMessageSize, NULL) != SOCKET_ERROR)
+			if (recv(socket_, currentMessage_, kMaxMessageSize, 0) != SOCKET_ERROR)
 			{
 				isMessageReady_ = true;
 			}

@@ -1,5 +1,7 @@
 #include "game_server.h"
 
+#include <iostream>
+
 #include "ai_player.h"
 #include "network_player.h"
 
@@ -38,6 +40,13 @@ namespace checkers
 					std::thread connectionInit = std::thread([this, &potential] {initConnection(potential); });
 					connectionInit.detach();
 				}
+                else
+                {
+                    char error[256];
+                    potential.getLastError(error,256);
+                    std::cout << "Server Error on listen: " << error << std::endl;
+                    currentConnectionIndex_ = 5000;
+                }
 			}
 		}
 

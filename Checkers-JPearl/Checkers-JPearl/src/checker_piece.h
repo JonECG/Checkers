@@ -11,7 +11,7 @@ namespace checkers
 	class CheckerPiece
 	{
 		bool isKing_ : 1;
-		PieceSide side_ : 1;
+		unsigned char side_ : 1;
 		unsigned char mark_ : 6;
 	public:
 		CheckerPiece();

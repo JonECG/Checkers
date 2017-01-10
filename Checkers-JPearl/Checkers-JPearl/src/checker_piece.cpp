@@ -20,7 +20,7 @@ namespace checkers
 
 	PieceSide CheckerPiece::getSide() const
 	{
-		return side_;
+		return (PieceSide) side_;
 	}
 
 	void CheckerPiece::setSide(PieceSide side)
