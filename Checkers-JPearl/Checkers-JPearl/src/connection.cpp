@@ -133,13 +133,22 @@ namespace checkers
 			if (idxQueuedMessagesStart_ != (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages)
 			{
 				char * packet = queuedMessages_ + kMaxMessageSize * idxQueuedMessagesEnd_;
-				if (recv(socket_, packet, kMaxMessageSize, 0) != SOCKET_ERROR)
+
+				bool success = false;
+				int meta = 3;
+				if (recv(socket_, packet, meta, 0) != SOCKET_ERROR)
 				{
-					processMutex.lock();
-					idxQueuedMessagesEnd_ = (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages;
-					processMutex.unlock();
+					unsigned short length = ntohs(*reinterpret_cast<unsigned short*>(packet + 1));
+					if (length == 0 || recv(socket_, packet + meta, length, 0) != SOCKET_ERROR)
+					{
+						processMutex.lock();
+						idxQueuedMessagesEnd_ = (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages;
+						processMutex.unlock();
+						success = true;
+					}
 				}
-				else
+
+				if( !success )
 				{
 					if (getLastError() == WSAECONNRESET)
 						isConnected_ = false;
@@ -285,6 +294,7 @@ namespace checkers
 			printSockError("Error hosting : " << isHosting_ << " on send payload");
 			return false;
 		}
+
 		return true;
 	}
 
@@ -300,24 +310,31 @@ namespace checkers
 
 		if (sendPayload(MessageType::REQUEST_INPUT))
 		{
-			while (!hasMessageWaiting());
-
-			MessageType type;
-			unsigned int length;
-
-			const char * message = processMessage(type, length);
-
-			if (message != nullptr)
+			if (waitUntilHasMessage())
 			{
-				outResponse = std::string(message);
-				return true;
+				MessageType type;
+				unsigned int length;
+
+				const char * message = processMessage(type, length);
+
+				if (message != nullptr)
+				{
+					outResponse = std::string(message);
+					return true;
+				}
 			}
 		}
 
 		return false;
 	}
 
-	bool Connection::hasMessageWaiting()
+	bool Connection::waitUntilHasMessage() const
+	{
+		while (isConnected_ && !hasMessageWaiting()) { std::this_thread::yield(); }
+		return hasMessageWaiting();
+	}
+
+	bool Connection::hasMessageWaiting() const
 	{
 		return idxQueuedMessagesStart_ != idxQueuedMessagesEnd_;
 	}

@@ -64,8 +64,11 @@ namespace checkers
 		// Requests a message from the other end. Returns whether it was successful
 		bool requestInput(std::string &outResponse);
 
+		// Yields current thread until this connection has a message or disconnects. Returns whether there is a message.
+		bool waitUntilHasMessage() const;
+
 		// Returns whether the connection has a message waiting and prepare it
-		bool hasMessageWaiting();
+		bool hasMessageWaiting() const;
 
 		// If a message is waiting return it. Pointer is to the start of the payload. Payload is invalidated on next call to processMessage(). Meta information is returned through the parameters. If no message is waiting will return nullptr
 		const char * processMessage(MessageType &outType, unsigned int &outLength);

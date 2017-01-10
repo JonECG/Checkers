@@ -49,26 +49,27 @@ void dummyClient()
 	{
 		while (conn.isConnected())
 		{
-			while (!conn.hasMessageWaiting());
-
-			checkers::MessageType type;
-			const char * data = nullptr;
-			unsigned int length;
-
-			data = conn.processMessage(type, length);
-
-			if (data != nullptr)
+			if (conn.waitUntilHasMessage())
 			{
-				switch (type)
+				checkers::MessageType type;
+				const char * data = nullptr;
+				unsigned int length;
+
+				data = conn.processMessage(type, length);
+
+				if (data != nullptr)
 				{
-				case checkers::MessageType::SEND_MESSAGE:
-					std::cout << data << std::flush;
-					break;
-				case checkers::MessageType::REQUEST_INPUT:
-					std::string response = std::string();
-					std::getline(std::cin, response);
-					conn.sendMessage(response);
-					break;
+					switch (type)
+					{
+					case checkers::MessageType::SEND_MESSAGE:
+						std::cout << data << std::flush;
+						break;
+					case checkers::MessageType::REQUEST_INPUT:
+						std::string response = std::string();
+						std::getline(std::cin, response);
+						conn.sendMessage(response);
+						break;
+					}
 				}
 			}
 		}
