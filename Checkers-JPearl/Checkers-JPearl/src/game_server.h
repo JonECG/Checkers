@@ -14,7 +14,7 @@ namespace checkers
 		static const int kMaxNumGames = 128;
 		static const int kMaxConnections = 128;
 
-		int port_;
+		unsigned short port_;
 		bool isRunning_;
 
 		std::thread runningThread_;
@@ -37,7 +37,7 @@ namespace checkers
 
 
 	public:
-		GameServer(int port);
+		GameServer(unsigned short port);
 
 		void initialize();
 		void release();

@@ -37,7 +37,6 @@ namespace checkers
 		while (sequence[index] != '\0')
 		{
 			char currentChar = sequence[index];
-			bool isUpperCase = false;
 
 			// Whitespace
 			if (currentChar == ' ')
@@ -52,8 +51,10 @@ namespace checkers
 			}
 			else
 			// Column
-			if ((currentChar >= 'a' && currentChar < 'a' + +CheckerBoard::kNumColumns) || ( isUpperCase = (currentChar >= 'A' && currentChar < 'A' + CheckerBoard::kNumColumns)))
+			if ((currentChar >= 'a' && currentChar < 'a' + +CheckerBoard::kNumColumns) || (currentChar >= 'A' && currentChar < 'A' + CheckerBoard::kNumColumns))
 			{
+				bool isUpperCase = (currentChar >= 'A' && currentChar < 'A' + CheckerBoard::kNumColumns);
+
 				if( currentColumn != -1)
 					throw std::invalid_argument("Could not parse move. Coordinate row was expected after column but another column index was provided");
 

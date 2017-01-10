@@ -86,7 +86,7 @@ namespace checkers
 		CheckerBoard *originalBoard = game_->checkerBoard_;
 		game_->checkerBoard_ = &simulatedBoard;
 
-		const char * error = game_->attemptMove(move);
+		game_->attemptMove(move);
 
 		double boardScore = evaluateBoardState(simulatedBoard);
 		double score = boardScore - previousBoardScore;
@@ -199,7 +199,7 @@ namespace checkers
 			}
 
 #ifdef DEBUG
-			for (int i = recurseLevels; i < recurseLevels_; i++)
+			for (int whiteSpace = recurseLevels; whiteSpace < recurseLevels_; whiteSpace++)
 			{
 				std::cout << "    ";
 			}

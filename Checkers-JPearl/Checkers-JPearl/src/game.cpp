@@ -82,8 +82,8 @@ namespace checkers
 
 		for (int direction = 0; direction < 4; direction++)
 		{
-			int deltaX = (direction & 0b01) ? 1 : -1;
-			int deltaY = (direction & 0b10) ? 1 : -1;
+			unsigned char deltaX = (direction & 0b01) ? 1 : -1;
+			unsigned char deltaY = (direction & 0b10) ? 1 : -1;
 
 			if (!piece->getIsKing() && ((deltaY > 0) ^ (piece->getSide() == PieceSide::O)))
 				continue; // The piece cannot move this way
@@ -229,8 +229,8 @@ namespace checkers
 			if (!checkerBoard_->isCoordValid(currentCoord))
 				return "An intermediate position was not valid";
 
-			int deltaX = currentCoord.column - previousCoord.column;
-			int deltaY = currentCoord.row - previousCoord.row;
+			unsigned char deltaX = currentCoord.column - previousCoord.column;
+			unsigned char deltaY = currentCoord.row - previousCoord.row;
 
 			if (std::abs(deltaX) != std::abs(deltaY))
 				return "Checkers can only move diagonally";
@@ -324,7 +324,7 @@ namespace checkers
 			// If move was valid, remove taken pieces
 			if (error == nullptr)
 			{
-				CheckerPiece *piece = checkerBoard_->removeAt(toBeRemoved[i]);
+				checkerBoard_->removeAt(toBeRemoved[i]);
 			}
 		}
 		return error;

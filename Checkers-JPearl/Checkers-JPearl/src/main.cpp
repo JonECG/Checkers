@@ -30,8 +30,61 @@ int getAiLevel(const char * message)
 	return result;
 }
 
+void dummyClient()
+{
+
+	std::cout << "Enter IP > ";
+	std::string ip = std::string();
+	std::getline(std::cin, ip);
+
+	std::cout << "Enter Port (default 8989) > ";
+	std::string portString = std::string();
+	std::getline(std::cin, portString);
+	short port = 8989;
+
+	char error[256];
+
+	checkers::Connection conn;
+	if (checkers::Connection::connectTo(ip, port, conn, 1000))
+	{
+		while (conn.isConnected())
+		{
+			while (!conn.hasMessageWaiting());
+
+			checkers::MessageType type;
+			const char * data = nullptr;
+			unsigned int length;
+
+			data = conn.processMessage(type, length);
+
+			if (data != nullptr)
+			{
+				switch (type)
+				{
+				case checkers::MessageType::SEND_MESSAGE:
+					std::cout << data << std::flush;
+					break;
+				case checkers::MessageType::REQUEST_INPUT:
+					std::string response = std::string();
+					std::getline(std::cin, response);
+					conn.sendMessage(response);
+					break;
+				}
+			}
+		}
+		std::cout << "Connection to server terminated " << std::endl;
+	}
+	else
+	{
+		conn.getLastError(error, 256);
+		std::cout << "ERROR: " << error << std::endl;
+	}
+}
+
 int main(int argc, char ** argv)
 {
+	argc; argv;
+
 	int winner = -1;
 	
 	bool repeat = true;
@@ -94,6 +147,8 @@ int main(int argc, char ** argv)
 					gameServer.stop();
 				else
 					gameServer.start();
+
+				dummyClient();
 				break;
 			case '5':
 				repeat = false;

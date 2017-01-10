@@ -7,7 +7,7 @@ namespace checkers
 {
 	
 
-	GameServer::GameServer(int port)
+	GameServer::GameServer(unsigned short port)
 	{
 		port_ = port;
 		isRunning_ = false;
@@ -32,7 +32,7 @@ namespace checkers
 			if (currentConnectionIndex_ < kMaxConnections)
 			{
 				Connection &potential = currentConnections_[currentConnectionIndex_];
-				if (Connection::listen(port_, potential, 1000))
+				if (Connection::listenTo(port_, potential, 1000))
 				{
 					currentConnectionIndex_++;
 					std::thread connectionInit = std::thread([this, &potential] {initConnection(potential); });
@@ -55,16 +55,20 @@ namespace checkers
 
 		while (!receivedValidInput)
 		{
-			connection.sendMessage(
+			if (!connection.sendMessage(
 				"Welcome to the server. What would you like to do?\n"
 				"1) Play against someone else\n"
 				"2) Play against an AI\n"
 				"Your choice > "
-			);
+			))
+				continue;
 
-			std::string response = "1";// connection.requestInput();
+			std::string response = std::string();
 
-			if (response.length() == 1)
+			if (!connection.requestInput(response))
+				continue;
+
+			if ( response.length() == 1)
 			{
 				switch (response[0])
 				{
@@ -83,9 +87,13 @@ namespace checkers
 
 						while (!receivedValidAILevel)
 						{
-							connection.sendMessage("Enter the difficulty level for the AI\nEnter 0-9 > ");
+							if (!connection.sendMessage("Enter the difficulty level for the AI\nEnter 0-9 > "))
+								continue;
 
-							std::string levelResponse = connection.requestInput();
+							std::string levelResponse = std::string();
+							
+							if (!connection.requestInput(levelResponse))
+								continue;
 							
 							if (levelResponse.length() == 1 && levelResponse[0] >= '0' && levelResponse[0] <= '9')
 							{
