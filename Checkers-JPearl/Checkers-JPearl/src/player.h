@@ -14,6 +14,9 @@ namespace checkers
 		// Requests a move from the player
 		virtual Move requestMove() = 0;
 
+		// Sends a message to the player
+		virtual void sendMessage(const char * message) const = 0;
+
 		// Returns the symbol that represents the side this player controls
 		char getSymbol() const;
 		PieceSide getControllingSide() const;

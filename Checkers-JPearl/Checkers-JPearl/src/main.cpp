@@ -110,38 +110,26 @@ int main(int argc, char ** argv)
 		if (choice.length() > 0)
 		{
 
+			checkers::Game game = checkers::Game(true);
+			game.initialize();
+
 			switch (choice[0])
 			{
 			case '1':
-			{
-				checkers::Game game = checkers::Game();
 				game.registerPlayer(new checkers::LocalPlayer(&game), checkers::PieceSide::O);
 				game.registerPlayer(new checkers::LocalPlayer(&game), checkers::PieceSide::X);
-				game.initialize();
 				winner = game.getPlayer(game.run())->getControllingSide();
-				game.release();
 				break;
-			}
 			case '2':
-			{
-				checkers::Game game = checkers::Game();
 				game.registerPlayer(new checkers::LocalPlayer(&game), checkers::PieceSide::O);
 				game.registerPlayer(new checkers::AiPlayer(&game, getAiLevel("Enter the difficulty level for the AI")), checkers::PieceSide::X);
-				game.initialize();
 				winner = game.getPlayer(game.run())->getControllingSide();
-				game.release();
 				break;
-			}
 			case '3':
-			{
-				checkers::Game game = checkers::Game();
 				game.registerPlayer(new checkers::AiPlayer(&game, getAiLevel("Enter the difficulty level for the AI playing 'O's")), checkers::PieceSide::O);
 				game.registerPlayer(new checkers::AiPlayer(&game, getAiLevel("Enter the difficulty level for the AI playing 'X's")), checkers::PieceSide::X);
-				game.initialize();
 				winner = game.getPlayer(game.run())->getControllingSide();
-				game.release();
 				break;
-			}
 			case '4':
 				if (gameServer.isRunning())
 					gameServer.stop();
@@ -157,6 +145,8 @@ int main(int argc, char ** argv)
 				std::cout << "Unrecognized input" << std::endl;
 				break;
 			}
+
+			game.release();
 		}
 	}
 

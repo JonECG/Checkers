@@ -1,5 +1,6 @@
 #include "network_player.h"
 
+#include "connection.h"
 #include "move.h"
 namespace checkers
 {
@@ -12,5 +13,9 @@ namespace checkers
 	Move NetworkPlayer::requestMove()
 	{
 		return Move();
+	}
+	void NetworkPlayer::sendMessage(const char * message) const
+	{
+		connection_->sendMessage(message);
 	}
 }

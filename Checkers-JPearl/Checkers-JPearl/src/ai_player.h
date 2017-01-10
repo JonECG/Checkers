@@ -35,6 +35,7 @@ namespace checkers
 		AiPlayer(Game * game, int recurseLevels);
 
 		Move requestMove() override;
+		void sendMessage(const char * message) const override;
 	};
 }
 

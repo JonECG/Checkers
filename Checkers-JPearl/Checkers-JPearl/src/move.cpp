@@ -96,15 +96,13 @@ namespace checkers
 
 	std::ostream & operator<<(std::ostream & stream, const Move & move)
 	{
-		stream << '<';
 		for (int i = 0; i < move.numCoords_; i++)
 		{
 			stream << (char)('A' + move.moveCoords_[i].column) << (char)('1' + move.moveCoords_[i].row);
 
 			if(i < move.numCoords_-1)
-				stream << ", ";
+				stream << " ";
 		}
-		stream << '>';
 		return stream;
 	}
 }

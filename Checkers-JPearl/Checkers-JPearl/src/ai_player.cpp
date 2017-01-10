@@ -1,7 +1,5 @@
 #include "ai_player.h"
 
-#include <thread>
-#include <chrono>
 #include <iostream>
 
 #include "move.h"
@@ -241,5 +239,10 @@ namespace checkers
 #endif // DEBUG
 
 		return move;
+	}
+	void AiPlayer::sendMessage(const char * message) const
+	{
+		message;
+		// Do nothing
 	}
 }

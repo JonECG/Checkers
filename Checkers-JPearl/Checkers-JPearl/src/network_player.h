@@ -12,5 +12,6 @@ namespace checkers
 	public:
 		NetworkPlayer(Game *game, Connection *connection);
 		Move requestMove() override;
+		void sendMessage(const char * message) const override;
 	};
 }

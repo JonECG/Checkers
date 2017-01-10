@@ -184,7 +184,7 @@ namespace checkers
 				stream << (char)('1' + y) << ' ';
 			}
 			
-			stream << std::endl;
+			stream << '\n';
 		}
 
 		return stream;

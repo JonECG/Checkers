@@ -10,9 +10,10 @@
 
 namespace checkers
 {
-	Game::Game()
+	Game::Game(bool echoMessagesToConsole)
 	{
 		currentPlayerTurn_ = 0;
+		echoMessagesToConsole_ = echoMessagesToConsole;
 	}
 
 	void Game::initialize()
@@ -41,12 +42,32 @@ namespace checkers
 		}
 	}
 
+	std::ostream& Game::messageWriter()
+	{
+		return currentMessage_;
+	}
+
+	void Game::sendMessageToPlayers(bool excludeCurrent)
+	{
+		for (int i = 0; i < kNumPlayers; i++)
+		{
+			if(!excludeCurrent || currentPlayerTurn_ != i)
+				players_[i]->sendMessage(currentMessage_.str().c_str());
+		}
+
+		if (echoMessagesToConsole_)
+			std::cout << currentMessage_.str() << std::flush;
+
+		currentMessage_.str(std::string());
+	}
+
 	void Game::registerPlayer(Player * player, PieceSide side)
 	{
 		if (players_[side])
 			delete players_[side];
 
 		players_[side] = player;
+		players_[side]->setControllingSide(side);
 	}
 
 	void Game::runMoves(char ** moves, int numMoves)
@@ -82,8 +103,8 @@ namespace checkers
 
 		for (int direction = 0; direction < 4; direction++)
 		{
-			unsigned char deltaX = (direction & 0b01) ? 1 : -1;
-			unsigned char deltaY = (direction & 0b10) ? 1 : -1;
+			char deltaX = (direction & 0b01) ? 1 : -1;
+			char deltaY = (direction & 0b10) ? 1 : -1;
 
 			if (!piece->getIsKing() && ((deltaY > 0) ^ (piece->getSide() == PieceSide::O)))
 				continue; // The piece cannot move this way
@@ -229,8 +250,8 @@ namespace checkers
 			if (!checkerBoard_->isCoordValid(currentCoord))
 				return "An intermediate position was not valid";
 
-			unsigned char deltaX = currentCoord.column - previousCoord.column;
-			unsigned char deltaY = currentCoord.row - previousCoord.row;
+			char deltaX = currentCoord.column - previousCoord.column;
+			char deltaY = currentCoord.row - previousCoord.row;
 
 			if (std::abs(deltaX) != std::abs(deltaY))
 				return "Checkers can only move diagonally";
@@ -311,6 +332,26 @@ namespace checkers
 	}
 
 
+	const char * Game::attemptTurn(const Move & move)
+	{
+		CheckerPiece *piece = checkerBoard_->getPiece(move.getCoordinate(0));
+		// Validate move
+		if (move.getNumCoords() < 2)
+		{
+			return "Not enough coordinates to be a move.";
+		}
+		else
+		if (piece == nullptr || piece->getSide() != players_[currentPlayerTurn_]->getControllingSide())
+		{
+			// Not a valid checker
+			return "Missing target. There is no checker at the given position or it does not belong to you.";
+		}
+		else
+		{
+			return attemptMove(move);
+		}
+	}
+
 	const char * Game::attemptMove(const Move & move)
 	{
 		std::vector<CompactCoordinate> toBeRemoved = std::vector<CompactCoordinate>();
@@ -336,6 +377,19 @@ namespace checkers
 		return (checkerBoard_->getNumPieces(otherPlayer->getControllingSide()) == 0 || !canAnyPieceMove(otherPlayer->getControllingSide()));
 	}
 
+	void Game::writeAllMovesAvailable(PieceSide side)
+	{
+		Move moves[Game::kMoveArraySize];
+		int startIndex = 0;
+		int count = findAllMoves(side, moves, Game::kMoveArraySize, startIndex);
+
+		messageWriter() << "Available Moves: \n";
+		for (int i = 0; i < count; i++)
+		{
+			messageWriter() << "\t" << (i + 1) << ") " << moves[i + startIndex] << '\n';
+		}
+	}
+
 	int Game::run()
 	{
 		
@@ -343,38 +397,31 @@ namespace checkers
 
 		while (gameIsRunning)
 		{
-			std::cout << *checkerBoard_ << std::endl;
+			messageWriter() << *checkerBoard_;
 
 			bool validMoveReceived = false;
 			while (!validMoveReceived)
 			{
+				// Prints available moves
+				messageWriter() << "Enter a move as {start} {destination1} {destinationX...}  Eg: c3 d4 or e3 c5 e7\n";
+				writeAllMovesAvailable(players_[currentPlayerTurn_]->getControllingSide());
+
+				// Request move from player 
+				messageWriter() << "player '" << players_[currentPlayerTurn_]->getSymbol() << "'> ";
+				sendMessageToPlayers();
 				Move move = players_[currentPlayerTurn_]->requestMove();
 
-				std::cout << "Trying move: " << move << std::endl;
+				// Display current move
+				messageWriter() << move << " -- Now attempting\n";
 
-				CheckerPiece *piece = checkerBoard_->getPiece(move.getCoordinate(0));
 
-				// Validate move
-				if (move.getNumCoords() < 2)
-				{
-					std::cout << "Not enough coordinates to be a move." << std::endl;
-				}
+				// Attempt to take turn with the move
+				const char * error = attemptTurn(move);
+				if (error)
+					messageWriter() << "Not a valid move. " << error << '\n';
 				else
-				if (piece == nullptr || piece->getSide() != players_[currentPlayerTurn_]->getControllingSide())
-				{
-					// Not a valid checker
-					std::cout << "Not a valid target. Checker is not at given position or it does not belong to you." << std::endl;
-				}
-				else
-				{
-					const char * error = attemptMove(move);
-					validMoveReceived = error == nullptr;
-
-					if (!validMoveReceived)
-					{
-						std::cout << "Not a valid move: " << error << std::endl;
-					}
-				}
+					validMoveReceived = true;
+				sendMessageToPlayers();
 			}
 			
 			if (checkForWinCondition(currentPlayerTurn_))
@@ -386,11 +433,13 @@ namespace checkers
 				currentPlayerTurn_ = (currentPlayerTurn_ + 1) % kNumPlayers;
 			}
 
-			std::cout << std::endl << std::endl;
+			messageWriter() << "\n\n\n";
 		}
 
-		std::cout << *checkerBoard_;
-		std::cout << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' wins!" << std::endl;
+		// Write out final board state
+		messageWriter() << *checkerBoard_;
+		messageWriter() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' wins!\n";
+		sendMessageToPlayers();
 
 		return currentPlayerTurn_;
 	}

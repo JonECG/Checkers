@@ -9,5 +9,6 @@ namespace checkers
 	public:
 		LocalPlayer(Game *game);
 		Move requestMove() override;
+		void sendMessage(const char * message) const override;
 	};
 }

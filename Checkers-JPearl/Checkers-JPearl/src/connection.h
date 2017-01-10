@@ -45,7 +45,7 @@ namespace checkers
 		bool hasMessageWaiting();
 
 		// If a message is waiting return it. Pointer is to the start of the payload. Payload is invalidated on next call to hasMessageWaiting(). Meta information is returned through the parameters. If no message is waiting will return nullptr
-		const char * processMessage(MessageType &outType, unsigned int &outLength) ;
+		const char * processMessage(MessageType &outType, unsigned int &outLength);
 
 		bool isConnected() const;
 		bool isHosting() const;
