@@ -6,6 +6,7 @@
 #include "player.h"
 #include "local_player.h"
 #include "ai_player.h"
+#include "game_server.h"
 
 int getAiLevel(const char * message)
 {
@@ -33,16 +34,21 @@ int main(int argc, char ** argv)
 {
 	int winner = -1;
 	
-	bool validInput = false;
+	bool repeat = true;
 
-	while (!validInput)
+	checkers::GameServer gameServer(8989);
+
+	gameServer.initialize();
+
+	while (repeat)
 	{
 		std::cout <<
 			"Welcome to Jonathan Pearl's implementation of American Checkers. Please select what you would like to do." << std::endl <<
 			"1) Play a game locally against another person" << std::endl <<
 			"2) Play a game against AI" << std::endl <<
 			"3) Watch a game played between AIs" << std::endl <<
-			"4) Quit" << std::endl <<
+			( gameServer.isRunning() ? "4) Stop Network Game Server" : "4) Start Network Game Server" ) << std::endl <<
+			"5) Quit" << std::endl <<
 			"Your Choice > ";
 
 		std::string choice;
@@ -50,8 +56,6 @@ int main(int argc, char ** argv)
 
 		if (choice.length() > 0)
 		{
-			// Assume valid input until it's not
-			validInput = true;
 
 			switch (choice[0])
 			{
@@ -86,19 +90,22 @@ int main(int argc, char ** argv)
 				break;
 			}
 			case '4':
+				if (gameServer.isRunning())
+					gameServer.stop();
+				else
+					gameServer.start();
+				break;
+			case '5':
+				repeat = false;
 				break;
 			default:
 				std::cout << "Unrecognized input" << std::endl;
-				validInput = false;
 				break;
 			}
 		}
 	}
 
-	std::cout << "Press enter to exit...";
-	std::string dummy;
-	std::getline(std::cin, dummy);
-
+	gameServer.release();
 
 	return winner;
 }

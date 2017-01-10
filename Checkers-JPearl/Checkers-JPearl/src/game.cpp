@@ -352,8 +352,14 @@ namespace checkers
 
 				std::cout << "Trying move: " << move << std::endl;
 
-				// Validate move
 				CheckerPiece *piece = checkerBoard_->getPiece(move.getCoordinate(0));
+
+				// Validate move
+				if (move.getNumCoords() < 2)
+				{
+					std::cout << "Not enough coordinates to be a move." << std::endl;
+				}
+				else
 				if (piece == nullptr || piece->getSide() != players_[currentPlayerTurn_]->getControllingSide())
 				{
 					// Not a valid checker

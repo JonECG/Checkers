@@ -74,10 +74,14 @@
     <ClCompile Include="src\ai_player.cpp" />
     <ClCompile Include="src\checker_board.cpp" />
     <ClCompile Include="src\checker_piece.cpp" />
+    <ClCompile Include="src\connection - nonblock.cpp" />
+    <ClCompile Include="src\connection.cpp" />
     <ClCompile Include="src\game.cpp" />
+    <ClCompile Include="src\game_server.cpp" />
     <ClCompile Include="src\local_player.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\move.cpp" />
+    <ClCompile Include="src\network_player.cpp" />
     <ClCompile Include="src\player.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -85,9 +89,12 @@
     <ClInclude Include="src\checker_board.h" />
     <ClInclude Include="src\checker_piece.h" />
     <ClInclude Include="src\compact_coordinate.h" />
+    <ClInclude Include="src\connection.h" />
     <ClInclude Include="src\game.h" />
+    <ClInclude Include="src\game_server.h" />
     <ClInclude Include="src\local_player.h" />
     <ClInclude Include="src\move.h" />
+    <ClInclude Include="src\network_player.h" />
     <ClInclude Include="src\player.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
