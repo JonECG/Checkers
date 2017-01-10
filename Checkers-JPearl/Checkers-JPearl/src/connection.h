@@ -11,17 +11,24 @@ namespace checkers
 	};
 	class Connection
 	{
-		static const int kMaxMessageSize = 2560;
+		static const int kMaxMessageSize = 1280;
+		static const int kMaxNumberOfMessages = 5;
 		static bool isInit_;
 
 		unsigned int socket_;
 		bool isHosting_;
 		bool isConnected_;
 
-		bool isMessageReady_;
+		// Circular buffer of messages
+		unsigned char idxQueuedMessagesStart_, idxQueuedMessagesEnd_;
+		char queuedMessages_[kMaxMessageSize * kMaxNumberOfMessages];
 		char currentMessage_[kMaxMessageSize];
 
 		bool sendPayload(MessageType type, const char * data = nullptr, unsigned int length = 0) const;
+
+		// Starts running this connection on a new thread and keeping track of new messages
+		void run();
+		void runLoop();
 	public:
 		static void init();
 		static void shutdown();
@@ -44,7 +51,7 @@ namespace checkers
 		// Returns whether the connection has a message waiting and prepare it
 		bool hasMessageWaiting();
 
-		// If a message is waiting return it. Pointer is to the start of the payload. Payload is invalidated on next call to hasMessageWaiting(). Meta information is returned through the parameters. If no message is waiting will return nullptr
+		// If a message is waiting return it. Pointer is to the start of the payload. Payload is invalidated on next call to processMessage(). Meta information is returned through the parameters. If no message is waiting will return nullptr
 		const char * processMessage(MessageType &outType, unsigned int &outLength);
 
 		bool isConnected() const;

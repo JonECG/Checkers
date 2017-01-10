@@ -11,8 +11,8 @@ namespace checkers
 	class Connection;
 	class GameServer
 	{
-		static const int kMaxNumGames = 128;
-		static const int kMaxConnections = 128;
+		static const int kMaxNumGames = 8;
+		static const int kMaxConnections = 8;
 
 		unsigned short port_;
 		bool isRunning_;

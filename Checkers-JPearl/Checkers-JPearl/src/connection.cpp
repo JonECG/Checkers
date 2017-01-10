@@ -1,5 +1,6 @@
 #include "connection.h"
 
+#include <thread>
 
 #ifdef _WIN32
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -93,14 +94,35 @@ namespace checkers
 	}
 #endif
 
+	void Connection::run()
+	{
+		std::thread runningThread = std::thread([this] {runLoop(); });
+		runningThread.detach();
+	}
+
+	void Connection::runLoop()
+	{
+		while (isConnected_)
+		{
+			// As long as we haven't wrapped fully around the circular buffer
+			while (idxQueuedMessagesStart_ != (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages)
+			{
+				char * packet = queuedMessages_ + kMaxMessageSize * idxQueuedMessagesEnd_;
+				if (recv(socket_, packet, kMaxMessageSize, 0) != SOCKET_ERROR)
+				{
+					idxQueuedMessagesEnd_ = (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages;
+				}
+			}
+		}
+		closesocket(socket_);
+	}
+
 	bool Connection::listenTo(unsigned short port, Connection &outConnection, unsigned int timeout)
 	{
 		timeout; // TODO: nonblocking sockets
  
 		if (!isInit_)
 			init();
-		
-		
 
 		SOCKET sockListen;
 
@@ -142,6 +164,7 @@ namespace checkers
 			outConnection.isConnected_ = true;
 			outConnection.socket_ = sockIncomingConnection;
 			outConnection.isHosting_ = true;
+			outConnection.run();
 			closesocket(sockListen);
 			return true;
 		}
@@ -183,6 +206,7 @@ namespace checkers
 			outConnection.isConnected_ = true;
 			outConnection.socket_ = sock;
 			outConnection.isHosting_ = false;
+			outConnection.run();
 			return true;
 		}
 
@@ -265,24 +289,19 @@ namespace checkers
 
 	bool Connection::hasMessageWaiting()
 	{
-		if (!isMessageReady_)
-		{
-			if (recv(socket_, currentMessage_, kMaxMessageSize, 0) != SOCKET_ERROR)
-			{
-				isMessageReady_ = true;
-			}
-		}
-
-		return isMessageReady_;
+		return idxQueuedMessagesStart_ != idxQueuedMessagesEnd_;
 	}
 	
 	const char * Connection::processMessage(MessageType & outType, unsigned int & outLength)
 	{
-		if (isMessageReady_)
+		if (hasMessageWaiting())
 		{
-			outType = (MessageType) currentMessage_[0];
-			outLength = ntohs(*reinterpret_cast<unsigned short*>(currentMessage_+1));
-			isMessageReady_ = false;
+			char * buffer = queuedMessages_ + kMaxMessageSize * idxQueuedMessagesStart_;
+			outType = (MessageType)buffer[0];
+			outLength = ntohs(*reinterpret_cast<unsigned short*>(buffer + 1));
+			memcpy_s(currentMessage_, kMaxMessageSize, buffer, outLength + 3);
+			
+			idxQueuedMessagesStart_ = (idxQueuedMessagesStart_ + 1) % kMaxNumberOfMessages;
 			return currentMessage_ + 3;
 		}
 		return nullptr;
