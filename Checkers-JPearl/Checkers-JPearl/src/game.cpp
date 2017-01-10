@@ -392,7 +392,6 @@ namespace checkers
 
 	int Game::run()
 	{
-		
 		bool gameIsRunning = true;
 
 		while (gameIsRunning)
@@ -405,6 +404,7 @@ namespace checkers
 				// Prints available moves
 				messageWriter() << "Enter a move as {start} {destination1} {destinationX...}  Eg: c3 d4 or e3 c5 e7\n";
 				writeAllMovesAvailable(players_[currentPlayerTurn_]->getControllingSide());
+				messageWriter() << "You can also forfeit by typing 'FORFEIT'\n";
 
 				// Request move from player 
 				messageWriter() << "player '" << players_[currentPlayerTurn_]->getSymbol() << "'> ";
@@ -412,8 +412,15 @@ namespace checkers
 				Move move = players_[currentPlayerTurn_]->requestMove();
 
 				// Display current move
-				messageWriter() << move << " -- Now attempting\n";
+				messageWriter() << move << " -- Move provided\n";
 
+				// Check for forfeit
+				if (move.isForfeit())
+				{
+					messageWriter() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' forfeits...\n";
+					gameIsRunning = false;
+					break;
+				}
 
 				// Attempt to take turn with the move
 				const char * error = attemptTurn(move);

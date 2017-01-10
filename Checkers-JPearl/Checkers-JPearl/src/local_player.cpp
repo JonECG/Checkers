@@ -26,7 +26,11 @@ namespace checkers
 
 			try
 			{
-				result = checkers::Move::parseFromString(input.c_str());
+				if (input.find("FORFEIT") != std::string::npos || input.find("forfeit") != std::string::npos)
+					result.makeForfeit();
+				else
+					result = checkers::Move::parseFromString(input.c_str());
+
 				moveSuccessfullyMade = true;
 			}
 			catch (std::exception& e)

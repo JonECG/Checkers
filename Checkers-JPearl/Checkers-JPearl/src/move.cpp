@@ -27,6 +27,16 @@ namespace checkers
 		return moveCoords_[index];
 	}
 
+	bool Move::isForfeit() const
+	{
+		return *reinterpret_cast<unsigned const char *>(moveCoords_ + ( kMaxCoordsPerMove - 1 ) ) == kForfeitValue;
+	}
+
+	void Move::makeForfeit()
+	{
+		*reinterpret_cast<unsigned char *>(moveCoords_ + (kMaxCoordsPerMove - 1)) = kForfeitValue;
+	}
+
 	Move Move::parseFromString(const char * sequence)
 	{
 		Move result = Move();
@@ -96,6 +106,10 @@ namespace checkers
 
 	std::ostream & operator<<(std::ostream & stream, const Move & move)
 	{
+		if (move.isForfeit())
+			return stream << "FORFEIT";
+
+
 		for (int i = 0; i < move.numCoords_; i++)
 		{
 			stream << (char)('A' + move.moveCoords_[i].column) << (char)('1' + move.moveCoords_[i].row);
