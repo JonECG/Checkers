@@ -8,7 +8,7 @@
 	#include <iostream>
 	//#define _X86_
 	//#include <debugapi.h>
-#define printSockError( message ) std::ostringstream os__ = std::ostringstream();char error[256];int code = Connection::getLastError(error, 256);os__ << message << "  " << code << " -- " << error << std::endl; std::cout << os__.str() << std::endl;//OutputDebugString(os__.str().c_str());
+#define printSockError( message ) std::ostringstream os__ = std::ostringstream();char error[256];int code = checkers::Connection::getLastError(error, 256);os__ << message << "  " << code << " -- " << error << std::endl; std::cout << os__.str() << std::endl;//OutputDebugString(os__.str().c_str());
 #else
 	#define printSockError(message)
 #endif

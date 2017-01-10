@@ -174,6 +174,7 @@ namespace checkers
 		if (sockListen == INVALID_SOCKET)
 		{
 			// Clean up
+			printSockError("Error creating listen socket");
 			return false;
 		}
 
@@ -190,6 +191,7 @@ namespace checkers
 		if (bind(sockListen, (SOCKADDR*)&address, addressSize) == SOCKET_ERROR)
 		{
 			// Clean up
+			printSockError("Error binding listen socket");
 			closesocket(sockListen);
 			return false;
 		}
@@ -197,6 +199,7 @@ namespace checkers
 		if (listen(sockListen, SOMAXCONN) == SOCKET_ERROR)
 		{
 			// Clean up
+			printSockError("Error listening listen socket");
 			closesocket(sockListen);
 			return false;
 		}
@@ -219,6 +222,7 @@ namespace checkers
 		sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (sock == INVALID_SOCKET)
 		{
+			printSockError("Error creating connecting socket");
 			return false;
 		}
  
@@ -241,6 +245,8 @@ namespace checkers
 			outConnection.run();
 			return true;
 		}
+
+		printSockError("Error connecting");
 
 		// Clean up
 		closesocket(sock);

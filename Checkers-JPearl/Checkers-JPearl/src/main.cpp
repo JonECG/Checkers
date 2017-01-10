@@ -8,6 +8,8 @@
 #include "ai_player.h"
 #include "game_server.h"
 
+short defaultPort = 8989;
+
 int getAiLevel(const char * message)
 {
 	bool validInput = false;
@@ -32,20 +34,29 @@ int getAiLevel(const char * message)
 
 void dummyClient()
 {
-
-	std::cout << "Enter IP > ";
+	std::cout << "Enter IP (default 127.0.0.1) > ";
 	std::string ip = std::string();
 	std::getline(std::cin, ip);
+	if (ip.empty())
+		ip = "127.0.0.1";
 
-	std::cout << "Enter Port (default 8989) > ";
+	std::cout << "Enter Port (default " << defaultPort << ") > ";
 	std::string portString = std::string();
 	std::getline(std::cin, portString);
-	short port = 8989;
-
-	char error[256];
+	unsigned short port = defaultPort;
+	
+	try
+	{
+		if (!portString.empty())
+			port = (unsigned short) std::stoi(portString);
+	}
+	catch (std::exception) 
+	{
+		std::cout << "Couldn't parse port string, using " << defaultPort << std::endl;
+	}
 
 	checkers::Connection conn;
-	if (checkers::Connection::connectTo(ip, port, conn, 1000))
+	if (checkers::Connection::connectTo(ip, port, conn))
 	{
 		while (conn.isConnected())
 		{
@@ -77,8 +88,7 @@ void dummyClient()
 	}
 	else
 	{
-		conn.getLastError(error, 256);
-		std::cout << "ERROR: " << error << std::endl;
+		std::cout << "Couldn't connect" << std::endl;
 	}
 }
 
@@ -90,7 +100,7 @@ int main(int argc, char ** argv)
 	
 	bool repeat = true;
 
-	checkers::GameServer gameServer(8989);
+	checkers::GameServer gameServer(defaultPort);
 
 	gameServer.initialize();
 
