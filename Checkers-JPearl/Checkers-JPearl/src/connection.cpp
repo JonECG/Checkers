@@ -139,10 +139,11 @@ namespace checkers
 
 				bool success = false;
 				int meta = 3;
-				if (recv(socket_, packet, meta, 0) != SOCKET_ERROR)
+				int bytesReceived = recv(socket_, packet, meta, 0);
+				if (bytesReceived != SOCKET_ERROR && (bytesReceived != 0 || meta == 0))
 				{
 					unsigned short length = ntohs(*reinterpret_cast<unsigned short*>(packet + 1));
-					if (length == 0 || recv(socket_, packet + meta, length, 0) != SOCKET_ERROR)
+					if (length == 0 || recv(socket_, packet + meta, length, 0) == length )
 					{
 						processMutex.lock();
 						idxQueuedMessagesEnd_ = (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages;
@@ -153,12 +154,11 @@ namespace checkers
 
 				if( !success )
 				{
-					if (getLastError() == WSAECONNRESET)
-						isConnected_ = false;
-
+					disconnect();
 					printSockError("Error hosting : " << isHosting_ << " on receive");
 				}
 			}
+			std::this_thread::yield();
 		}
 		disconnect();
 	}
@@ -257,13 +257,19 @@ namespace checkers
 		return false;
 	}
 
-	void Connection::disconnect()
+	void Connection::disconnect(bool waitForSendToComplete)
 	{
 		if (isConnected_)
 		{
+			if (waitForSendToComplete)
+				sendMutex.lock();
+
 			shutdown(socket_, SHUT_RDWR);
 			closesocket(socket_);
 			isConnected_ = false;
+
+			if (waitForSendToComplete)
+				sendMutex.unlock();
 		}
 	}
 

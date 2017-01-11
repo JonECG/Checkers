@@ -112,6 +112,8 @@ namespace checkers
 								receivedValidAILevel = true;
 								levelResult = levelResponse[0] - '0';
 							}
+
+							std::this_thread::yield();
 						}
 
 						startAiGame(connection, levelResult);
@@ -123,6 +125,8 @@ namespace checkers
 
 			if (!receivedValidInput)
 				connection.sendMessage("Unrecognized input\n");
+
+			std::this_thread::yield();
 		}
 	}
 
@@ -140,8 +144,10 @@ namespace checkers
 		{
 			playerToAdd.sendMessage("Found another player! Starting game.\n");
 			connectionWaitingForOnlineGame_->sendMessage("Found another player! Starting game.\n");
+			Connection *connectionWaiting = connectionWaitingForOnlineGame_;
+			connectionWaitingForOnlineGame_ = nullptr;
 			serverMutex_.unlock();
-			startOnlineGame(*connectionWaitingForOnlineGame_, playerToAdd);
+			startOnlineGame(*connectionWaiting, playerToAdd);
 		}
 	}
 
@@ -166,7 +172,7 @@ namespace checkers
 		serverMutex_.unlock();
 
 		startGame(currentGames_[gameIndex]);
-		player.disconnect(); // Disconnect players on game completion
+		player.disconnect(true); // Disconnect players on game completion
 	}
 
 	void GameServer::startOnlineGame(Connection & playerOne, Connection & playerTwo)
@@ -176,12 +182,14 @@ namespace checkers
 		int gameIndex = currentGameIndex_++;
 		Game *game = currentGames_ + gameIndex;
 		game->registerPlayer(new NetworkPlayer(&playerOne), PieceSide::O);
+		playerOne.sendMessage("\n\nYou are playing as O's\n\n");
 		game->registerPlayer(new NetworkPlayer(&playerTwo), PieceSide::X);
+		playerTwo.sendMessage("\n\nYou are playing as X's\n\n");
 
 		serverMutex_.unlock();
 
 		startGame(currentGames_[gameIndex]);
-		playerOne.disconnect(); playerTwo.disconnect(); // Disconnect players on game completion
+		playerOne.disconnect(true); playerTwo.disconnect(true); // Disconnect players on game completion
 	}
 
 	bool GameServer::start(unsigned short port)

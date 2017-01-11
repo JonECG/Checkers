@@ -13,7 +13,7 @@ namespace checkers
 	class Connection;
 	class GameServer
 	{
-		static const int kMaxConnections = 8;
+		static const int kMaxConnections = 20;
 
 		unsigned short port_;
 		bool isRunning_;

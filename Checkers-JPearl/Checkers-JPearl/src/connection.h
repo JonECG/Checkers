@@ -10,7 +10,7 @@
 	#include <iostream>
 	//#define _X86_
 	//#include <debugapi.h>
-#define printSockError( message ) std::ostringstream os__ = std::ostringstream();char error[256];int code = checkers::Connection::getLastError(error, 256);os__ << message << "  " << code << " -- " << error << std::endl; std::cout << os__.str() << std::endl;//OutputDebugString(os__.str().c_str());
+#define printSockError( message ) std::ostringstream os__ = std::ostringstream();char error[256];int code = checkers::Connection::getLastError(error, 256);os__ << message << "  " << code << " -- " << error << std::endl; std::cout << std::endl << os__.str() << std::endl;//OutputDebugString(os__.str().c_str());
 #else
 	#define printSockError(message)
 #endif
@@ -26,7 +26,7 @@ namespace checkers
 	class Connection
 	{
 		static const int kMaxMessageSize = 1280;
-		static const int kMaxNumberOfMessages = 5;
+		static const int kMaxNumberOfMessages = 3;
 		static bool isInit_;
 
 		unsigned int socket_;
@@ -58,7 +58,7 @@ namespace checkers
 
 		static bool connectTo(std::string ip, unsigned short port, Connection &outConnection, unsigned int timeout = 1000);
 
-		void disconnect();
+		void disconnect(bool waitForSendToComplete = false);
 
 		// Sends a message to the other end. Returns whether it was successful
 		bool sendMessage(std::string message);
