@@ -7,7 +7,7 @@ namespace checkers
 	class DummyClient
 	{
 	public:
-		static const unsigned short kDefaultPort = 8989;
+		static const char * kDefaultPort;
 
 		void run();
 	};

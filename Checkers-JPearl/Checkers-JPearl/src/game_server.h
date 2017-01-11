@@ -15,7 +15,6 @@ namespace checkers
 	{
 		static const int kMaxConnections = 20;
 
-		unsigned short port_;
 		bool isRunning_;
 		
 		std::thread runningThread_;
@@ -46,7 +45,7 @@ namespace checkers
 		void release();
 
 		// Starts the server, returns whether successful
-		bool start(unsigned short port);
+		bool start(const char * port);
 		void stop();
 
 		bool isRunning();

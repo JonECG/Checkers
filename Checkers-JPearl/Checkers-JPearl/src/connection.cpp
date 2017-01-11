@@ -3,7 +3,9 @@
 #ifdef _WIN32
     #define _CRT_SECURE_NO_WARNINGS
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
-	#include <winsock2.h>
+	#include <WinSock2.h>
+	#include <Ws2ipdef.h>
+	#include <Ws2tcpip.h>
 #else
 	#include <string.h>
 	#include <sys/types.h>
@@ -76,10 +78,6 @@ namespace checkers
 
 		return wsaError;
 	}
-	void setAddressIp( SOCKADDR_IN &address, const char * ip )
-	{
-		address.sin_addr.S_un.S_addr = inet_addr(ip);
-	}
 #else
 	void Connection::init()
 	{
@@ -107,10 +105,6 @@ namespace checkers
 		}
 
 		return errorId;
-	}
-	void setAddressIp( SOCKADDR_IN &address, const char * ip )
-	{
-		inet_aton(ip, &address.sin_addr);
 	}
 #endif
 
@@ -163,39 +157,40 @@ namespace checkers
 		disconnect();
 	}
 
-	bool Connection::listenTo(unsigned short port, ConnectionListener &outListener, unsigned int timeout)
+	bool Connection::listenTo(const char * port, ConnectionListener &outListener, unsigned int timeout)
 	{
 		timeout; // TODO: nonblocking sockets
  
 		if (!isInit_)
 			init();
 
-		SOCKET sockListen;
+		struct addrinfo hints, *results;
+		memset(&hints, 0, sizeof hints);
+		hints.ai_family = AF_UNSPEC;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_PASSIVE;
 
-		// Simple reliable TCP connection
-		sockListen = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		int getAddrResult = getaddrinfo(NULL, port, &hints, &results);
+		getAddrResult;
+		SOCKET sockListen;
+		sockListen = socket(results->ai_family, results->ai_socktype, results->ai_protocol);
 		if (sockListen == INVALID_SOCKET)
 		{
 			// Clean up
 			printSockError("Error creating listen socket");
+			freeaddrinfo(results);
 			return false;
 		}
 
-		SOCKADDR_IN address;
-		AddressLength addressSize = sizeof(address);
- 
-		setAddressIp( address, "127.0.0.1" );
-		address.sin_family = AF_INET;
-		address.sin_port = htons(port);
- 
-		int reuseAddress = 1;
-		setsockopt( sockListen, SOL_SOCKET, SO_REUSEADDR, (char*) &reuseAddress, sizeof reuseAddress );
-
-		if (bind(sockListen, (SOCKADDR*)&address, addressSize) == SOCKET_ERROR)
+		//int reuseAddress = 1;
+		//setsockopt( sockListen, SOL_SOCKET, SO_REUSEADDR, (char*) &reuseAddress, sizeof reuseAddress );
+		
+		if (bind(sockListen, results->ai_addr, results->ai_addrlen) == SOCKET_ERROR)
 		{
 			// Clean up
 			printSockError("Error binding listen socket");
 			closesocket(sockListen);
+			freeaddrinfo(results);
 			return false;
 		}
 		
@@ -204,48 +199,55 @@ namespace checkers
 			// Clean up
 			printSockError("Error listening listen socket");
 			closesocket(sockListen);
+			freeaddrinfo(results);
 			return false;
 		}
 
 		outListener.socket_ = sockListen;
 		outListener.isListening_ = true;
+		*reinterpret_cast<sockaddr*>(outListener.address_) = *results->ai_addr;
 		
+		freeaddrinfo(results);
 		return true;
 	}
 
-	bool Connection::connectTo(std::string ip, unsigned short port, Connection &outConnection, unsigned int timeout)
+	bool Connection::connectTo(const char * host, const char * port, Connection &outConnection, unsigned int timeout)
 	{
 		timeout; // TODO: nonblocking sockets
 
 		if (!isInit_)
 			init();
  
+
+		struct addrinfo hints, *results;
+		memset(&hints, 0, sizeof hints);
+		hints.ai_family = AF_UNSPEC;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_PASSIVE;
+
+		int getAddrResult = getaddrinfo(host, port, &hints, &results);
+		getAddrResult;
 		SOCKET sock;
-		// Simple reliable TCP connection
-		sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		sock = socket(results->ai_family, results->ai_socktype, results->ai_protocol);
 		if (sock == INVALID_SOCKET)
 		{
 			printSockError("Error creating connecting socket");
+			freeaddrinfo(results);
 			return false;
 		}
- 
-		SOCKADDR_IN address;
-		setAddressIp(address, ip.c_str());
-		address.sin_family = AF_INET;
-		address.sin_port = htons(port);
 
 		bool success = false;
-		if (connect(sock, (SOCKADDR*)&address, sizeof(address)) != SOCKET_ERROR)
+		if (connect(sock, results->ai_addr, results->ai_addrlen) != SOCKET_ERROR)
 		{
 			success = true;
 		}
-
 		if (success)
 		{
 			outConnection.isConnected_ = true;
 			outConnection.socket_ = sock;
 			outConnection.isHosting_ = false;
 			outConnection.run();
+			freeaddrinfo(results);
 			return true;
 		}
 
@@ -253,6 +255,7 @@ namespace checkers
 
 		// Clean up
 		closesocket(sock);
+		freeaddrinfo(results);
 
 		return false;
 	}
@@ -403,10 +406,11 @@ namespace checkers
 	{
 		timeout;
 
-		SOCKADDR_IN address;
-		AddressLength addressSize = sizeof(address);
+		struct sockaddr_storage incAddr;
+		socklen_t incAddrSize = sizeof incAddr;
 
-		SOCKET sockIncomingConnection = accept(socket_, (SOCKADDR*)&address, &addressSize);
+
+		SOCKET sockIncomingConnection = accept(socket_, (sockaddr*)&incAddr, &incAddrSize);
 		if (sockIncomingConnection != INVALID_SOCKET)
 		{
 			outConnection.isConnected_ = true;
@@ -417,7 +421,6 @@ namespace checkers
 		}
 		else
 		{
-			end();
 			return false;
 		}
 	}

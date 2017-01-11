@@ -192,7 +192,7 @@ namespace checkers
 		playerOne.disconnect(true); playerTwo.disconnect(true); // Disconnect players on game completion
 	}
 
-	bool GameServer::start(unsigned short port)
+	bool GameServer::start(const char * port)
 	{
 		bool result = false;
 		serverMutex_.lock();
@@ -205,7 +205,6 @@ namespace checkers
 			}
 			else
 			{
-				port_ = port;
 				result = true;
 				isRunning_ = true;
 				runningThread_ = std::thread([this] { run(); });

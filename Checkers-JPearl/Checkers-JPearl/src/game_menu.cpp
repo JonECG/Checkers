@@ -94,20 +94,12 @@ namespace checkers
 					else
 					{
 						std::cout << "Enter Port (default " << checkers::DummyClient::kDefaultPort << ") > ";
-						std::string portString = std::string();
-						std::getline(std::cin, portString);
-						unsigned short port = checkers::DummyClient::kDefaultPort;
-						try
-						{
-							if (!portString.empty())
-								port = (unsigned short)std::stoi(portString);
-						}
-						catch (std::exception)
-						{
-							std::cout << "Couldn't parse port string, using " << checkers::DummyClient::kDefaultPort << std::endl;
-						}
+						std::string port = std::string();
+						std::getline(std::cin, port);
+						if (port.empty())
+							port = checkers::DummyClient::kDefaultPort;
 
-						if (!gameServer.start(port))
+						if (!gameServer.start(port.c_str()))
 							std::cout << "Couldn't start server on port " << port << std::endl;
 					}
 					break;

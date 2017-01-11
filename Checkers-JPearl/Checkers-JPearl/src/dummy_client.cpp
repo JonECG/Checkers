@@ -7,31 +7,24 @@
 
 namespace checkers
 {
+	const char * DummyClient::kDefaultPort = "8989";
+
 	void DummyClient::run()
 	{
-		std::cout << "Enter IP (default 127.0.0.1) > ";
-		std::string ip = std::string();
-		std::getline(std::cin, ip);
-		if (ip.empty())
-			ip = "127.0.0.1";
+		std::cout << "Enter Host Address (default \"localhost\") > ";
+		std::string host = std::string();
+		std::getline(std::cin, host);
+		if (host.empty())
+			host = "localhost";
 
 		std::cout << "Enter Port (default " << kDefaultPort << ") > ";
-		std::string portString = std::string();
-		std::getline(std::cin, portString);
-		unsigned short port = kDefaultPort;
-
-		try
-		{
-			if (!portString.empty())
-				port = (unsigned short)std::stoi(portString);
-		}
-		catch (std::exception)
-		{
-			std::cout << "Couldn't parse port string, using " << kDefaultPort << std::endl;
-		}
+		std::string port = std::string();
+		std::getline(std::cin, port);
+		if (port.empty())
+			port = kDefaultPort;
 
 		Connection conn;
-		if (Connection::connectTo(ip, port, conn))
+		if (Connection::connectTo(host.c_str(), port.c_str(), conn))
 		{
 			while (conn.isConnected())
 			{

@@ -54,9 +54,9 @@ namespace checkers
 		Connection();
 		
 		// Listens on the port given for any incoming connection and will write it to the given outConnection parameter. Returns whether a connection was found before timeout (in milliseconds)
-		static bool listenTo(unsigned short port, ConnectionListener &outListener, unsigned int timeout = 1000);
+		static bool listenTo(const char * port, ConnectionListener &outListener, unsigned int timeout = 1000);
 
-		static bool connectTo(std::string ip, unsigned short port, Connection &outConnection, unsigned int timeout = 1000);
+		static bool connectTo(const char * host, const char * port, Connection &outConnection, unsigned int timeout = 1000);
 
 		void disconnect(bool waitForSendToComplete = false);
 
@@ -84,6 +84,7 @@ namespace checkers
 	{
 		unsigned int socket_;
 		bool isListening_;
+		char address_[32];
 	public:
 		void end();
 
