@@ -16,7 +16,7 @@ namespace checkers
 	{
 	public:
 		static const int kNumRows = 8;
-		static const int kNumActualColumns = 1; // How many playable columns there are per row
+		static const int kNumActualColumns = 4; // How many playable columns there are per row
 		static const int kNumRowsPerPlayer = 3;
 		static const int kNumSides = 2;
 
