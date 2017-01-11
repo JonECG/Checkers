@@ -1,9 +1,7 @@
 #include "connection.h"
 
-#include <thread>
-#include <iostream>
-
 #ifdef _WIN32
+    #define _CRT_SECURE_NO_WARNINGS
 	#define _WINSOCK_DEPRECATED_NO_WARNINGS
 	#include <winsock2.h>
 #else
@@ -17,6 +15,9 @@
 	#include <unistd.h> 
 #endif
 
+#include <thread>
+#include <iostream>
+
 // Using WinSock interface, some defines here to keep things clean below
 #ifdef _WIN32
 	#define AddressLength int
@@ -29,6 +30,7 @@
 	#define SOCKADDR_IN sockaddr_in
 	#define SOCKET int // Sockets are just file descriptors in BSD
 	#define SOCKADDR sockaddr
+	#define WSAECONNRESET ECONNRESET
 #endif
 
 #define BLOCKING 0
@@ -98,7 +100,7 @@ namespace checkers
 			{
 				buffer[i] = error[i];
 				if (error[i] == '\0')
-					return;
+					return errorId;
 			}
 			buffer[bufferLength - 1] = '\0';
 		}
@@ -354,7 +356,8 @@ namespace checkers
 			char * buffer = queuedMessages_ + kMaxMessageSize * idxQueuedMessagesStart_;
 			outType = (MessageType)buffer[0];
 			outLength = ntohs(*reinterpret_cast<unsigned short*>(buffer + 1));
-			memcpy_s(currentMessage_, kMaxMessageSize, buffer, outLength + 3);
+                        
+			memcpy(currentMessage_, buffer, outLength + 3);
 			
 			idxQueuedMessagesStart_ = (idxQueuedMessagesStart_ + 1) % kMaxNumberOfMessages;
 			result = currentMessage_ + 3;
