@@ -7,7 +7,7 @@
 
 namespace checkers
 {
-	const char * DummyClient::kDefaultPort = "8989";
+	const char * DummyClient::kDefaultPort = "32123";
 
 	void DummyClient::run()
 	{

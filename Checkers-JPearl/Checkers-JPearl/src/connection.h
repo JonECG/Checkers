@@ -17,7 +17,8 @@ namespace checkers
 	enum MessageType : unsigned char
 	{
 		SEND_MESSAGE = 0,
-		REQUEST_INPUT = 1
+		REQUEST_INPUT = 1,
+		FIN = (unsigned char)~0
 	};
 	class ConnectionListener;
 	class Connection
@@ -29,8 +30,9 @@ namespace checkers
 		static const char * connectionErrorMessage_;
 
 		unsigned int socket_;
-		bool isHosting_;
-		bool isConnected_;
+		bool isHosting_:1;
+		bool isConnected_:1;
+		bool isSending_:1;
 
 		// Circular buffer of messages
 		unsigned char idxQueuedMessagesStart_, idxQueuedMessagesEnd_;
@@ -56,7 +58,7 @@ namespace checkers
 
 		static bool connectTo(const char * host, const char * port, Connection &outConnection, unsigned int timeout = 1000);
 
-		void disconnect(bool waitForSendToComplete = false);
+		void disconnect(bool waitForSendToComplete = true);
 
 		// Sends a message to the other end. Returns whether it was successful
 		bool sendMessage(std::string message);

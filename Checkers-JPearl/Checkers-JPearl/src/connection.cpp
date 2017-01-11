@@ -23,8 +23,9 @@
 // Using WinSock interface, some defines here to keep things clean below
 #ifdef _WIN32
 	#define AddressLength int
+	#define SHUT_RD 0
+	#define SHUT_WR 1
 	#define SHUT_RDWR 2
-	
 #else
 	#define AddressLength unsigned int
 	#define INVALID_SOCKET -1
@@ -132,6 +133,7 @@ namespace checkers
 
 	Connection::Connection()
 	{
+		isSending_ = false;
 		idxQueuedMessagesStart_ = 0;
 		idxQueuedMessagesEnd_ = 0;
 	}
@@ -158,6 +160,12 @@ namespace checkers
 				int bytesReceived = recv(socket_, packet, meta, 0);
 				if (bytesReceived != SOCKET_ERROR && (bytesReceived != 0 || meta == 0))
 				{
+					if (*reinterpret_cast<unsigned char*>(packet) == MessageType::FIN)
+					{
+						disconnect(false);
+						return;
+					}
+
 					unsigned short length = ntohs(*reinterpret_cast<unsigned short*>(packet + 1));
 					if (length == 0 || recv(socket_, packet + meta, length, 0) == length )
 					{
@@ -170,13 +178,12 @@ namespace checkers
 
 				if( !success )
 				{
-					disconnect();
+					disconnect(true);
 					setLastError("Error on receive");
 				}
 			}
 			std::this_thread::yield();
 		}
-		disconnect();
 	}
 
 	bool Connection::listenTo(const char * port, ConnectionListener &outListener, unsigned int timeout)
@@ -287,14 +294,25 @@ namespace checkers
 		if (isConnected_)
 		{
 			if (waitForSendToComplete)
-				sendMutex.lock();
-
-			shutdown(socket_, SHUT_RDWR);
-			closesocket(socket_);
+			{
+				isSending_ = true;
+				shutdown(socket_, SHUT_RD);
+				sendPayload(MessageType::FIN);
+			}
+			else
+			{
+				shutdown(socket_, SHUT_RDWR);
+				closesocket(socket_);
+			}
 			isConnected_ = false;
-
-			if (waitForSendToComplete)
-				sendMutex.unlock();
+		}
+		if (isSending_ && !waitForSendToComplete)
+		{
+			sendMutex.lock();
+			shutdown(socket_, SHUT_WR);
+			closesocket(socket_);
+			isSending_ = false;
+			sendMutex.unlock();
 		}
 	}
 

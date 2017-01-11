@@ -54,7 +54,7 @@ namespace checkers
 		for (int i = 0; i < currentConnectionIndex_; i++)
 		{
 			if(currentConnections_[i].isConnected())
-				currentConnections_[i].disconnect();
+				currentConnections_[i].disconnect(false);
 
 			instances_[i].join();
 		}

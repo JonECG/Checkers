@@ -450,7 +450,6 @@ namespace checkers
 		messageWriter() << *checkerBoard_;
 		messageWriter() << players_[currentPlayerTurn_]->getDescriptor() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' wins!\n";
 		sendMessageToPlayers();
-
 		return currentPlayerTurn_;
 	}
 
