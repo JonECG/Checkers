@@ -1,4 +1,6 @@
 #pragma once
+#ifndef AI_PLAYER_H
+#define AI_PLAYER_H
 
 #include "checker_board.h"
 #include "player.h"
@@ -39,3 +41,4 @@ namespace checkers
 	};
 }
 
+#endif // AI_PLAYER_H

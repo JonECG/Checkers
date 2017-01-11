@@ -1,4 +1,6 @@
 #pragma once
+#ifndef NETWORK_PLAYER_H
+#define NETWORK_PLAYER_H
 
 #include "player.h"
 
@@ -15,3 +17,5 @@ namespace checkers
 		void sendMessage(const char * message) const override;
 	};
 }
+
+#endif // NETWORK_PLAYER_H

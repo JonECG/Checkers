@@ -1,4 +1,6 @@
 #pragma once
+#ifndef GAME_H
+#define GAME_H
 
 #include "checker_board.h"
 
@@ -66,3 +68,5 @@ namespace checkers
 		const Player* getPlayer(int index) const;
 	};
 }
+
+#endif // GAME_H

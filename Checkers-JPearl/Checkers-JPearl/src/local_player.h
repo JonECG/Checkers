@@ -1,4 +1,6 @@
 #pragma once
+#ifndef LOCAL_PLAYER_H
+#define LOCAL_PLAYER_H
 
 #include "player.h"
 namespace checkers
@@ -11,3 +13,5 @@ namespace checkers
 		void sendMessage(const char * message) const override;
 	};
 }
+
+#endif // LOCAL_PLAYER_H

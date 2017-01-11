@@ -1,4 +1,6 @@
 #pragma once
+#ifndef DUMMY_CLIENT_H
+#define DUMMY_CLIENT_H
 
 namespace checkers
 {
@@ -11,3 +13,4 @@ namespace checkers
 	};
 }
 
+#endif // DUMMY_CLIENT_H

@@ -1,4 +1,6 @@
 #pragma once
+#ifndef PLAYER_H
+#define PLAYER_H
 
 #include "checker_piece.h"
 namespace checkers
@@ -31,3 +33,5 @@ namespace checkers
 		void setGame(Game *game);
 	};
 } 
+
+#endif // PLAYER_H

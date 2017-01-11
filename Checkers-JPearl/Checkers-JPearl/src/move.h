@@ -1,4 +1,6 @@
 #pragma once
+#ifndef MOVE_H
+#define MOVE_H
 
 #include <ostream>
 #include "compact_coordinate.h"
@@ -36,3 +38,5 @@ namespace checkers
 		friend std::ostream& operator<< (std::ostream& stream, const Move& move);
 	};
 }
+
+#endif // MOVE_H

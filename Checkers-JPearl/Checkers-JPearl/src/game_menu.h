@@ -1,4 +1,6 @@
 #pragma once
+#ifndef GAME_MENU_H
+#define GAME_MENU_H
 
 namespace checkers
 {
@@ -17,3 +19,4 @@ namespace checkers
 	};
 }
 
+#endif // GAME_MENU_H

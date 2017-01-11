@@ -1,4 +1,6 @@
 #pragma once
+#ifndef CHECKER_BOARD_H
+#define CHECKER_BOARD_H
 
 #include <ostream>
 
@@ -61,3 +63,5 @@ namespace checkers
 		friend std::ostream& operator<< (std::ostream& stream, const CheckerBoard& board);
 	};
 }
+
+#endif // CHECKER_BOARD_H

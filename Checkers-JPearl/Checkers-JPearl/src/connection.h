@@ -1,4 +1,6 @@
 #pragma once
+#ifndef CONNECTION_H
+#define CONNECTION_H
 
 #include <string>
 #include <mutex>
@@ -91,3 +93,5 @@ namespace checkers
 		friend class Connection;
 	};
 }
+
+#endif // CONNECTION_H

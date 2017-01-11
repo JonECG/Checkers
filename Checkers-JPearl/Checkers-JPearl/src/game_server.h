@@ -1,4 +1,6 @@
 #pragma once
+#ifndef GAME_SERVER_H
+#define GAME_SERVER_H
 
 #include <thread>
 #include <mutex>
@@ -49,3 +51,5 @@ namespace checkers
 		bool isRunning();
 	};
 }
+
+#endif // GAME_SERVER_H

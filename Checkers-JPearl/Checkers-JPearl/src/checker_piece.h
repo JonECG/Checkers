@@ -1,4 +1,6 @@
 #pragma once
+#ifndef CHECKER_PIECE_H
+#define CHECKER_PIECE_H
 
 namespace checkers
 {
@@ -29,3 +31,5 @@ namespace checkers
 		char getSymbol() const;
 	};
 }
+
+#endif // CHECKER_PIECE_H
