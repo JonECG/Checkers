@@ -57,6 +57,7 @@ namespace checkers
 		else
 		{
 			std::cout << "Couldn't connect" << std::endl;
+			printSockError("");
 		}
 	}
 }

@@ -6,13 +6,10 @@
 #include <mutex>
 
 #ifdef DEBUG
-	#include <sstream>
 	#include <iostream>
-	//#define _X86_
-	//#include <debugapi.h>
-#define printSockError( message ) std::ostringstream os__ = std::ostringstream();char error[256];int code = checkers::Connection::getLastError(error, 256);os__ << message << "  " << code << " -- " << error << std::endl; std::cout << std::endl << os__.str() << std::endl;//OutputDebugString(os__.str().c_str());
+	#define printSockError( message ) char error[256]; const char * customMessage = nullptr; int code = checkers::Connection::getLastError(error, 256, &customMessage);std::cout << message << "  " << ((customMessage == nullptr) ? "" : customMessage )<< code << " -- " << error << std::endl;
 #else
-	#define printSockError(message)
+	#define printSockError(message) message;
 #endif
 
 namespace checkers
@@ -27,7 +24,9 @@ namespace checkers
 	{
 		static const int kMaxMessageSize = 1280;
 		static const int kMaxNumberOfMessages = 3;
+		static int lastError_;
 		static bool isInit_;
+		static const char * connectionErrorMessage_;
 
 		unsigned int socket_;
 		bool isHosting_;
@@ -48,8 +47,7 @@ namespace checkers
 	public:
 		static void init();
 		static void cleanup();
-		static int getLastError(char * buffer = nullptr, int bufferLength = 0);
-
+		static int getLastError(char * buffer = nullptr, int bufferLength = 0, const char ** outCustomMessage = nullptr);
 
 		Connection();
 		

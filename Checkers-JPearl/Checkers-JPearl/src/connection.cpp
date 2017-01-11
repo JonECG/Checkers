@@ -24,6 +24,7 @@
 #ifdef _WIN32
 	#define AddressLength int
 	#define SHUT_RDWR 2
+	
 #else
 	#define AddressLength unsigned int
 	#define INVALID_SOCKET -1
@@ -34,7 +35,18 @@
 	#define SOCKET int // Sockets are just file descriptors in BSD
 	#define SOCKADDR sockaddr
 	#define WSAECONNRESET ECONNRESET
+	
 #endif
+
+#ifdef DEBUG
+	#ifdef _WIN32
+		#define setLastError( message ) lastError_ = WSAGetLastError(); Connection::connectionErrorMessage_ = message;
+	#else // _WIN32
+		#define setLastError( message ) lastError_ = errno; Connection::connectionErrorMessage_ = message;
+	#endif // _WIN32
+#else // DEBUG
+	#define setLastError( message )
+#endif // DEBUG
 
 #define BLOCKING 0
 #define NONBLOCKING 1
@@ -42,6 +54,8 @@
 namespace checkers
 {
 	bool Connection::isInit_ = false;
+	int Connection::lastError_ = 0;
+	const char * Connection::connectionErrorMessage_ = nullptr;
 #ifdef _WIN32
 	void Connection::init()
 	{
@@ -64,10 +78,14 @@ namespace checkers
 				isInit_ = false;
 		}
 	}
-	int Connection::getLastError(char * buffer, int bufferLength)
+	int Connection::getLastError(char * buffer, int bufferLength, const char ** outCustomMessage)
 	{
-		int wsaError = WSAGetLastError();
+		int wsaError = lastError_;
 
+		if (outCustomMessage)
+		{
+			*outCustomMessage = connectionErrorMessage_;
+		}
 		if (buffer)
 		{
 			LPSTR errString = NULL;
@@ -88,10 +106,14 @@ namespace checkers
 	{
 		isInit_ = false;
 	}
-	int Connection::getLastError(char * buffer, int bufferLength)
+	int Connection::getLastError(char * buffer, int bufferLength, const char ** outCustomMessage)
 	{
-		int errorId = errno;
+		int errorId = lastError_;
 
+		if (outCustomMessage)
+		{
+			*outCustomMessage = connectionErrorMessage_;
+		}
 		if (buffer)
 		{
 			const char * error = strerror(errorId);
@@ -149,7 +171,7 @@ namespace checkers
 				if( !success )
 				{
 					disconnect();
-					printSockError("Error hosting : " << isHosting_ << " on receive");
+					setLastError("Error on receive");
 				}
 			}
 			std::this_thread::yield();
@@ -177,7 +199,7 @@ namespace checkers
 		if (sockListen == INVALID_SOCKET)
 		{
 			// Clean up
-			printSockError("Error creating listen socket");
+			setLastError("Error creating listen socket");
 			freeaddrinfo(results);
 			return false;
 		}
@@ -188,7 +210,7 @@ namespace checkers
 		if (bind(sockListen, results->ai_addr, results->ai_addrlen) == SOCKET_ERROR)
 		{
 			// Clean up
-			printSockError("Error binding listen socket");
+			setLastError("Error binding listen socket");
 			closesocket(sockListen);
 			freeaddrinfo(results);
 			return false;
@@ -197,7 +219,7 @@ namespace checkers
 		if (listen(sockListen, SOMAXCONN) == SOCKET_ERROR)
 		{
 			// Clean up
-			printSockError("Error listening listen socket");
+			setLastError("Error listening listen socket");
 			closesocket(sockListen);
 			freeaddrinfo(results);
 			return false;
@@ -231,7 +253,7 @@ namespace checkers
 		sock = socket(results->ai_family, results->ai_socktype, results->ai_protocol);
 		if (sock == INVALID_SOCKET)
 		{
-			printSockError("Error creating connecting socket");
+			setLastError("Error creating connecting socket");
 			freeaddrinfo(results);
 			return false;
 		}
@@ -251,7 +273,7 @@ namespace checkers
 			return true;
 		}
 
-		printSockError("Error connecting");
+		setLastError("Error connecting");
 
 		// Clean up
 		closesocket(sock);
@@ -310,7 +332,7 @@ namespace checkers
 
 		if (result == SOCKET_ERROR)
 		{
-			printSockError("Error hosting : " << isHosting_ << " on send payload");
+			setLastError("Error on send payload");
 			return false;
 		}
 
