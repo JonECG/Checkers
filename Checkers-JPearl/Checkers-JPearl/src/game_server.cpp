@@ -8,9 +8,8 @@
 namespace checkers
 {
 	
-	GameServer::GameServer(unsigned short port)
+	GameServer::GameServer()
 	{
-		port_ = port;
 		isRunning_ = false;
 	}
 
@@ -30,31 +29,21 @@ namespace checkers
 	{
 		while (isRunning_)
 		{
-			if (currentConnectionIndex_ < kMaxConnections)
+			if (currentConnectionIndex_ < kMaxConnections && listener.isListening())
 			{
-				// Start Listening if we aren't
-				if (!listener.isListening())
+				// Try to accept a new connection
+				Connection &potential = currentConnections_[currentConnectionIndex_];
+				if (listener.acceptConnection(potential, 1000))
 				{
-					if (!Connection::listenTo(port_, listener, 1000))
-					{
-						printSockError("Server error on creating listener");
-					}
+					instances_[currentConnectionIndex_] = std::thread([this, &potential] {initConnection(potential);});
+					currentConnectionIndex_++;
 				}
 				else
 				{
-					// Try to accept a new connection
-					Connection &potential = currentConnections_[currentConnectionIndex_];
-					if (listener.acceptConnection(potential, 1000))
-					{
-						instances_[currentConnectionIndex_] = std::thread([this, &potential] {initConnection(potential);});
-						currentConnectionIndex_++;
-					}
-					else
-					{
-						printSockError("Server error on accepting");
-					}
+					printSockError("Server error on accepting");
 				}
 			}
+			std::this_thread::yield();
 		}
 
 		// Shutdown
@@ -195,15 +184,27 @@ namespace checkers
 		playerOne.disconnect(); playerTwo.disconnect(); // Disconnect players on game completion
 	}
 
-	void GameServer::start()
+	bool GameServer::start(unsigned short port)
 	{
+		bool result = false;
 		serverMutex_.lock();
 		if (!isRunning_)
 		{
-			isRunning_ = true;
-			runningThread_ = std::thread([this] { run(); });
+			listener = ConnectionListener();
+			if (!Connection::listenTo(port, listener, 1000))
+			{
+				printSockError("Server error on creating listener");
+			}
+			else
+			{
+				port_ = port;
+				result = true;
+				isRunning_ = true;
+				runningThread_ = std::thread([this] { run(); });
+			}
 		}
 		serverMutex_.unlock();
+		return result;
 	}
 
 	void GameServer::stop()

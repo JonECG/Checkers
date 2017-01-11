@@ -53,7 +53,7 @@ namespace checkers
 
 		bool repeat = true;
 
-		checkers::GameServer gameServer(checkers::DummyClient::kDefaultPort);
+		checkers::GameServer gameServer;
 
 		gameServer.initialize();
 
@@ -88,9 +88,28 @@ namespace checkers
 					break;
 				case '4':
 					if (gameServer.isRunning())
+					{
 						gameServer.stop();
+					}
 					else
-						gameServer.start();
+					{
+						std::cout << "Enter Port (default " << checkers::DummyClient::kDefaultPort << ") > ";
+						std::string portString = std::string();
+						std::getline(std::cin, portString);
+						unsigned short port = checkers::DummyClient::kDefaultPort;
+						try
+						{
+							if (!portString.empty())
+								port = (unsigned short)std::stoi(portString);
+						}
+						catch (std::exception)
+						{
+							std::cout << "Couldn't parse port string, using " << checkers::DummyClient::kDefaultPort << std::endl;
+						}
+
+						if (!gameServer.start(port))
+							std::cout << "Couldn't start server on port " << port << std::endl;
+					}
 					break;
 				case '5':
 					DummyClient dummy;

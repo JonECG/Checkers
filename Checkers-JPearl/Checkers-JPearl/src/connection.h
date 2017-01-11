@@ -47,7 +47,7 @@ namespace checkers
 		void runLoop();
 	public:
 		static void init();
-		static void shutdown();
+		static void cleanup();
 		static int getLastError(char * buffer = nullptr, int bufferLength = 0);
 
 

@@ -40,12 +40,13 @@ namespace checkers
 
 
 	public:
-		GameServer(unsigned short port);
+		GameServer();
 
 		void initialize();
 		void release();
 
-		void start();
+		// Starts the server, returns whether successful
+		bool start(unsigned short port);
 		void stop();
 
 		bool isRunning();

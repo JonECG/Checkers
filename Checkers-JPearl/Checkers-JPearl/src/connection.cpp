@@ -21,6 +21,7 @@
 // Using WinSock interface, some defines here to keep things clean below
 #ifdef _WIN32
 	#define AddressLength int
+	#define SHUT_RDWR 2
 #else
 	#define AddressLength unsigned int
 	#define INVALID_SOCKET -1
@@ -52,7 +53,7 @@ namespace checkers
 		}
 	}
 
-	void Connection::shutdown()
+	void Connection::cleanup()
 	{
 		if (isInit_)
 		{
@@ -85,7 +86,7 @@ namespace checkers
 		isInit_ = true;
 	}
 
-	void Connection::shutdown()
+	void Connection::cleanup()
 	{
 		isInit_ = false;
 	}
@@ -260,6 +261,7 @@ namespace checkers
 	{
 		if (isConnected_)
 		{
+			shutdown(socket_, SHUT_RDWR);
 			closesocket(socket_);
 			isConnected_ = false;
 		}
@@ -380,6 +382,7 @@ namespace checkers
 	{
 		if (isListening_)
 		{
+			shutdown(socket_, SHUT_RDWR);
 			closesocket(socket_);
 			isListening_ = false;
 		}
