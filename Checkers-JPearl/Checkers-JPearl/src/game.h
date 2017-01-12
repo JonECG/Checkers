@@ -5,6 +5,7 @@
 #include "checker_board.h"
 
 #include <sstream>
+#include <map>
 
 namespace checkers
 {
@@ -15,10 +16,14 @@ namespace checkers
 		friend class AiPlayer;
 
 		static const int kNumPlayers = 2;
+		static const int kNumSameBoardStatesForDraw = 4;
 
 		CheckerBoard *checkerBoard_;
 		Player *players_[kNumPlayers];
 		unsigned char currentPlayerTurn_;
+		int currentTurn_ = 0;
+
+		std::map<uint_least64_t, unsigned char> boardStateOccurences_;
 
 		std::ostringstream currentMessage_;
 		bool echoMessagesToConsole_;
@@ -36,6 +41,8 @@ namespace checkers
 		const char * attemptMoveInternal(const Move& move, void * data);
 		// Returns whether the current player has won
 		bool checkForWinCondition(int playerIndex) const;
+		// Returns whether the current player has won
+		bool checkForDrawCondition();
 		// Writes out all moves available to the current message
 		void writeAllMovesAvailable(PieceSide side);
 	public:
@@ -59,7 +66,7 @@ namespace checkers
 		// For debug -- will run moves
 		void runMoves(char ** moves, int numMoves);
 
-		// The main game loop plays through the game and returns the index of the player that won
+		// The main game loop plays through the game and returns the index of the player that won or -1 if there was a draw
 		int run();
 
 		// Find all valid moves for the given side, returns the number of moves available and stored starting from the index returned in outStartPosition

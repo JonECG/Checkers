@@ -59,6 +59,9 @@ namespace checkers
 		// Removes any piece that was at the coordinate and returns it. If coordinate is invalid, or no piece is present, nullptr is returned
 		CheckerPiece* removeAt(CompactCoordinate coord);
 
+		// Returns the current board state represented in binary -- useful for hashing. If board state cannot fully be represented in uint_least64_t returns 0
+		uint_least64_t currentBoardState() const;
+
 		// Inserts a textual representation of the board and its pieces into a stream
 		friend std::ostream& operator<< (std::ostream& stream, const CheckerBoard& board);
 	};

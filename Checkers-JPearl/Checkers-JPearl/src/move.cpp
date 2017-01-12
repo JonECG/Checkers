@@ -61,7 +61,7 @@ namespace checkers
 			}
 			else
 			// Column
-			if ((currentChar >= 'a' && currentChar < 'a' + +CheckerBoard::kNumColumns) || (currentChar >= 'A' && currentChar < 'A' + CheckerBoard::kNumColumns))
+			if ((currentChar >= 'a' && currentChar < 'a' + CheckerBoard::kNumColumns) || (currentChar >= 'A' && currentChar < 'A' + CheckerBoard::kNumColumns))
 			{
 				bool isUpperCase = (currentChar >= 'A' && currentChar < 'A' + CheckerBoard::kNumColumns);
 

@@ -142,6 +142,80 @@ namespace checkers
 		return piece;
 	}
 
+	unsigned char getCeiledLog2(unsigned int value)
+	{
+		unsigned char result = 0;
+		while (value > 0)
+		{
+			value >>= 1;
+			result++;
+		}
+		return result;
+	}
+
+	uint_least64_t CheckerBoard::currentBoardState() const
+	{
+		int_least64_t result = 0;
+		unsigned char currentBit = 0;
+
+		/*
+			Represents the board as follows:
+				For each available square write the following
+					if is empty
+						write 0
+					else
+						write 1
+						write side 
+			
+			A board will have at maximum
+				4 * 8 = 32 squares
+				4 * 3 * 2 = 24 pieces
+				The maximum board will take up ( 24 ) * 2 + ( 32 - 24 ) * 1 = 56 bits
+
+			In the last 8 bits we write
+				num O kings in 4 bits
+				num X kings in 4 bits
+
+			With this we can represent a board in 64 bits
+			the only missing information being which pieces are kings but should be good enough to not be encountered in a game
+			And only works if it's a default board
+		*/
+
+		// Only perform the masking if we can fit in 64 bits
+		unsigned char numBits = sizeof uint_least64_t * CHAR_BIT;
+		unsigned char numBitsForKingsPerPlayer = getCeiledLog2(kNumPiecesPerPlayer);
+		unsigned char numBitsRequired = kNumPieces * 2 + (kNumCells - kNumPieces) + numBitsForKingsPerPlayer * 2;
+		if (numBitsRequired <= numBits )
+		{
+			unsigned char numKings[2];
+			const uint_least64_t kOne = 1;
+			for (int i = 0; i < kNumCells; i++)
+			{
+				CheckerPiece *piece = getPiece(i);
+				if (!piece)
+				{
+					currentBit++;
+				}
+				else
+				{
+					result |= kOne << currentBit++;
+					result |= (piece->getSide() & kOne) << currentBit++;
+					if (piece->getIsKing())
+						numKings[piece->getSide() & kOne]++;
+				}
+			}
+			for (int i = 0; i < 2; i++)
+			{
+				for (int bit = 0; bit < numBitsForKingsPerPlayer; bit++)
+				{
+					result |= ( (numKings[i] >> bit) & kOne) << currentBit++;
+				}
+			}
+		}
+
+		return result;
+	}
+
 
 	std::ostream & operator<<(std::ostream & stream, const CheckerBoard & board)
 	{

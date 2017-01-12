@@ -379,6 +379,27 @@ namespace checkers
 		return (checkerBoard_->getNumPieces(otherPlayer->getControllingSide()) == 0 || !canAnyPieceMove(otherPlayer->getControllingSide()));
 	}
 
+	bool Game::checkForDrawCondition()
+	{
+		uint_least64_t currentBoardState = checkerBoard_->currentBoardState();
+
+		if (currentBoardState == 0) // Empty board or cannot hash board because it's too big
+			return false;
+
+		unsigned char count = 0;
+
+		if (boardStateOccurences_.find(currentBoardState) == boardStateOccurences_.end())
+		{
+			count = boardStateOccurences_[currentBoardState] = 1;
+		}
+		else
+		{
+			count = ++boardStateOccurences_[currentBoardState];
+		}
+
+		return count >= kNumSameBoardStatesForDraw;
+	}
+
 	void Game::writeAllMovesAvailable(PieceSide side)
 	{
 		Move moves[Game::kMoveArraySize];
@@ -395,6 +416,7 @@ namespace checkers
 	int Game::run()
 	{
 		bool gameIsRunning = true;
+		int winner = -1;
 
 		while (gameIsRunning)
 		{
@@ -421,6 +443,7 @@ namespace checkers
 				if (move.isForfeit())
 				{
 					messageWriter() << players_[currentPlayerTurn_]->getDescriptor() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' forfeits...\n";
+					winner = (currentPlayerTurn_ + 1) % kNumPlayers;
 					gameIsRunning = false;
 					break;
 				}
@@ -437,20 +460,38 @@ namespace checkers
 			if (checkForWinCondition(currentPlayerTurn_))
 			{
 				gameIsRunning = false;
+				winner = currentPlayerTurn_;
 			}
-			else
+			if (checkForDrawCondition())
 			{
-				currentPlayerTurn_ = (currentPlayerTurn_ + 1) % kNumPlayers;
+				gameIsRunning = false;
+				winner = kNumPlayers;
 			}
+			
+			currentTurn_++;
+			currentPlayerTurn_ = (currentPlayerTurn_ + 1) % kNumPlayers;
 
 			messageWriter() << "\n\n\n";
 		}
 
 		// Write out final board state
 		messageWriter() << *checkerBoard_;
-		messageWriter() << players_[currentPlayerTurn_]->getDescriptor() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' wins!\n";
+		switch (winner)
+		{
+		case PieceSide::O:
+		case PieceSide::X:
+			messageWriter() << players_[winner]->getDescriptor() << "Player '" << players_[winner]->getSymbol() << "' wins!\n";
+			break;
+		case kNumPlayers:
+			messageWriter() << "The game was a draw! This board state has occured " << kNumSameBoardStatesForDraw << " times.\n";
+			break;
+		default:
+			messageWriter() << "Something weird happened to the game. Closing!\n";
+			break;
+		}
+
 		sendMessageToPlayers();
-		return currentPlayerTurn_;
+		return winner;
 	}
 
 	int Game::findAllMoves(PieceSide side, Move * moves, int moveCapacity, int& outStartPosition) const
