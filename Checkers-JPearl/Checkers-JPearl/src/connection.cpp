@@ -40,12 +40,14 @@
 #endif
 
 #ifdef DEBUG
+	#define verboseInfo(message) std::cout << "\n" << message << std::endl;
 	#ifdef _WIN32
 		#define setLastError( message ) lastError_ = WSAGetLastError(); Connection::connectionErrorMessage_ = message;
 	#else // _WIN32
 		#define setLastError( message ) lastError_ = errno; Connection::connectionErrorMessage_ = message;
 	#endif // _WIN32
 #else // DEBUG
+	#define verboseInfo(message)
 	#define setLastError( message )
 #endif // DEBUG
 
@@ -162,6 +164,7 @@ namespace checkers
 				{
 					if (*reinterpret_cast<unsigned char*>(packet) == MessageType::FIN)
 					{
+						verboseInfo("raw received FIN packet");
 						disconnect(false);
 						return;
 					}
@@ -171,6 +174,7 @@ namespace checkers
 					{
 						processMutex.lock();
 						idxQueuedMessagesEnd_ = (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages;
+						verboseInfo("raw received packet type:" << (int)*reinterpret_cast<unsigned char*>(packet) << " length:" << length);
 						processMutex.unlock();
 						success = true;
 					}
@@ -372,6 +376,8 @@ namespace checkers
 			return false;
 		}
 
+		verboseInfo("raw sent packet type:" << type << " length:" << length);
+
 		return true;
 	}
 
@@ -398,6 +404,10 @@ namespace checkers
 				{
 					outResponse = std::string(message);
 					return true;
+				}
+				else
+				{
+					verboseInfo("received packet discarded type:" << type << " length:" << length);
 				}
 			}
 		}
@@ -427,6 +437,8 @@ namespace checkers
 			outLength = ntohs(*reinterpret_cast<unsigned short*>(buffer + 1));
                         
 			memcpy(currentMessage_, buffer, outLength + 3);
+
+			verboseInfo("received packet processed type:" << outType << " length:" << outLength);
 			
 			idxQueuedMessagesStart_ = (idxQueuedMessagesStart_ + 1) % kMaxNumberOfMessages;
 			result = currentMessage_ + 3;
