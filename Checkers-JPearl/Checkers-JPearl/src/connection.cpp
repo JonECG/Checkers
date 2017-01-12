@@ -196,6 +196,7 @@ namespace checkers
 		struct addrinfo hints, *results;
 		memset(&hints, 0, sizeof hints);
 		hints.ai_family = AF_UNSPEC;
+		hints.ai_protocol = IPPROTO_TCP;
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_PASSIVE;
 
@@ -211,8 +212,18 @@ namespace checkers
 			return false;
 		}
 
-		//int reuseAddress = 1;
-		//setsockopt( sockListen, SOL_SOCKET, SO_REUSEADDR, (char*) &reuseAddress, sizeof reuseAddress );
+		int reuseAddress = 1;
+		if ( setsockopt(sockListen, SOL_SOCKET, SO_REUSEADDR, (char*)&reuseAddress, sizeof reuseAddress) == SOCKET_ERROR)
+		{
+			setLastError("Error setting SO_REUSEADDR");
+			printSockError("");
+		}
+		int ipv6only = 0;
+		if( setsockopt(sockListen, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&ipv6only, sizeof ipv6only) == SOCKET_ERROR)
+		{
+			setLastError("Error setting IPV6_V6ONLY");
+			printSockError("");
+		}
 		
 		if (bind(sockListen, results->ai_addr, results->ai_addrlen) == SOCKET_ERROR)
 		{
@@ -246,47 +257,54 @@ namespace checkers
 
 		if (!isInit_)
 			init();
- 
 
 		struct addrinfo hints, *results;
 		memset(&hints, 0, sizeof hints);
 		hints.ai_family = AF_UNSPEC;
+		hints.ai_protocol = IPPROTO_TCP;
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_PASSIVE;
 
 		int getAddrResult = getaddrinfo(host, port, &hints, &results);
 		getAddrResult;
-		SOCKET sock;
-		sock = socket(results->ai_family, results->ai_socktype, results->ai_protocol);
-		if (sock == INVALID_SOCKET)
-		{
-			setLastError("Error creating connecting socket");
-			freeaddrinfo(results);
-			return false;
-		}
+		SOCKET sock = 0;
 
 		bool success = false;
-		if (connect(sock, results->ai_addr, results->ai_addrlen) != SOCKET_ERROR)
+
+		for (addrinfo* addressToTest = results; addressToTest != nullptr; addressToTest = addressToTest->ai_next )
 		{
+			sock = socket(results->ai_family, results->ai_socktype, results->ai_protocol);
+			if (sock == INVALID_SOCKET)
+			{
+				setLastError("Error creating connecting socket");
+				printSockError("");
+				closesocket(sock);
+				continue;
+			}
+
+			if (connect(sock, results->ai_addr, results->ai_addrlen) == SOCKET_ERROR)
+			{
+				setLastError("Error connecting to socket");
+				printSockError("");
+				closesocket(sock);
+				continue;
+			}
+
 			success = true;
+			break;
 		}
+
 		if (success)
 		{
 			outConnection.isConnected_ = true;
 			outConnection.socket_ = sock;
 			outConnection.isHosting_ = false;
 			outConnection.run();
-			freeaddrinfo(results);
-			return true;
 		}
 
-		setLastError("Error connecting");
-
-		// Clean up
-		closesocket(sock);
 		freeaddrinfo(results);
 
-		return false;
+		return success;
 	}
 
 	void Connection::disconnect(bool waitForSendToComplete)
