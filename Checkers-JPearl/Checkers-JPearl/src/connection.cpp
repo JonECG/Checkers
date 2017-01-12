@@ -42,9 +42,9 @@
 #ifdef DEBUG
 	#define verboseInfo(message) std::cout << "\n" << message << std::endl;
 	#ifdef _WIN32
-		#define setLastError( message ) lastError_ = WSAGetLastError(); Connection::connectionErrorMessage_ = message;
+		#define setLastError( message ) { lastError_ = WSAGetLastError(); Connection::connectionErrorMessage_ = message; }
 	#else // _WIN32
-		#define setLastError( message ) lastError_ = errno; Connection::connectionErrorMessage_ = message;
+		#define setLastError( message ) { lastError_ = errno; Connection::connectionErrorMessage_ = message; }
 	#endif // _WIN32
 #else // DEBUG
 	#define verboseInfo(message)

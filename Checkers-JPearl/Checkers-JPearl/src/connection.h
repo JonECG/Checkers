@@ -7,7 +7,7 @@
 
 #ifdef DEBUG
 	#include <iostream>
-	#define printSockError( message ) char error[256]; const char * customMessage = nullptr; int code = checkers::Connection::getLastError(error, 256, &customMessage);std::cout << message << "  " << ((customMessage == nullptr) ? "" : customMessage )<< code << " -- " << error << std::endl;
+	#define printSockError( message ) { char error[256]; const char * customMessage = nullptr; int code = checkers::Connection::getLastError(error, 256, &customMessage);std::cout << message << "  " << ((customMessage == nullptr) ? "" : customMessage )<< code << " -- " << error << std::endl; }
 #else
 	#define printSockError(message) message;
 #endif
