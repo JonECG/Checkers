@@ -21,7 +21,7 @@ namespace checkers
 		totalFitnessScore_ = numberOfInstances_;
 
 		// Allocate arrays
-		population_ = new AiPlayer::Brain[populationSize_];
+		population_ = reinterpret_cast<AiPlayer::BrainView*>(new AiPlayer::Brain[populationSize_]);
 		instances_ = new std::thread[numberOfInstances_];
 		scores_ = new unsigned char[populationSize_];
 		buckets_ = new unsigned char[totalFitnessScore_];
@@ -29,10 +29,10 @@ namespace checkers
 		// Initialize population with current default brain
 		for (int i = 0; i < populationSize_; i++)
 		{
-			population_[i] = AiPlayer::kDefaultBrain;
+			population_[i].brain = AiPlayer::kDefaultBrain;
 		}
 		mutate();
-		fittest_ = population_;
+		fittest_ = &population_[0].brain;
 	}
 
 	void AiGeneticAlgorithm::release()

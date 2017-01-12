@@ -12,10 +12,26 @@ namespace checkers
 	class AiPlayer : public Player
 	{
 	public:
+
 		struct Brain
 		{
+			static const int kNumWeights = 5;
+			// Valuing pieces
+			double pointsForMenAtHomeRow = 1;
+			double pointsForMenAtKingRow = 1.1;
+			double pointsForKing = 1.3;
 
+			// Small biases to promote cohesion
+			double pointsForMoveAvailable = 0.01;
+			double pointsForPieceInCenter = 0.02;
 		} static const kDefaultBrain;
+		
+		union BrainView
+		{
+			double raw[Brain::kNumWeights];
+			Brain brain;
+		};
+
 	private:
 		static const int kNumHistoryRemembered = 32;
 		struct MoveHistory

@@ -17,7 +17,7 @@ namespace checkers
 		float maxRandom_;
 
 		// The current generation of brains
-		AiPlayer::Brain *population_;
+		AiPlayer::BrainView *population_;
 		// The simulations that set score between brains
 		std::thread *instances_;
 		// The collections of scores for each brain

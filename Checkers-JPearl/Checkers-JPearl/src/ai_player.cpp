@@ -16,15 +16,6 @@ namespace checkers
 
 	double AiPlayer::evaluateBoardState(const Game * game) const
 	{
-		// Valuing pieces
-		const double kPointsForMenAtHomeRow = 1;
-		const double kPointsForMenAtKingRow = 1.1;
-		const double kPointsForKing = 1.3;
-
-		// Small biases to promote cohesion
-		const double kPointsForMoveAvailable = 0.01;
-		const double kPointsForPieceInCenter = 0.02;
-
 		double score = 0;
 
 		// Evaluate Pieces
@@ -45,21 +36,21 @@ namespace checkers
 
 						if (piece->getIsKing())
 						{
-							score += kPointsForKing * multiplier;
+							score += brain_.pointsForKing * multiplier;
 						}
 						else
 						{
 							double startRow = (side == PieceSide::O) ? 0 : CheckerBoard::kNumRows - 1;
 							double endRow = (side == PieceSide::O) ? CheckerBoard::kNumRows - 1 : 0;
 							double progress = (y - startRow) / (endRow - startRow);
-							score += multiplier * (kPointsForMenAtHomeRow + (kPointsForMenAtKingRow - kPointsForMenAtHomeRow)*(progress));
+							score += multiplier * (brain_.pointsForMenAtHomeRow + (brain_.pointsForMenAtKingRow - brain_.pointsForMenAtHomeRow)*(progress));
 						}
 
 						// Manhatten distance
 						double distToCenter = std::abs((CheckerBoard::kNumColumns / 2) - coord.column) + std::abs((CheckerBoard::kNumRows / 2) - coord.row);
 						double maxDist = CheckerBoard::kNumColumns / 2 + CheckerBoard::kNumRows / 2;
 						double distPercent = 1 - (distToCenter / maxDist);
-						score += multiplier * distPercent * kPointsForPieceInCenter;
+						score += multiplier * distPercent * brain_.pointsForPieceInCenter;
 					}
 				}
 			}
@@ -68,9 +59,9 @@ namespace checkers
 		// Evaluate Num Moves each
 		int count = 0;
 		game->canAnyPieceMove(PieceSide::O, false, false, &count);
-		score -= count * kPointsForMoveAvailable;
+		score -= count * brain_.pointsForMoveAvailable;
 		game->canAnyPieceMove(PieceSide::X, false, false, &count);
-		score += count * kPointsForMoveAvailable;
+		score += count * brain_.pointsForMoveAvailable;
 
 		return score;
 	}
