@@ -156,7 +156,12 @@ namespace checkers
 		// The instance now belongs to the connection that started the game.
 		// Which is the connection that requested the AI game or the 2nd connection into an online game
 		game.initialize();
-		int result = game.run();
+		game.startGame();
+		while (game.playTurn())
+		{
+			std::this_thread::yield();
+		}
+		int result = game.getWinner();
 		game.release();
 		return result;
 	}

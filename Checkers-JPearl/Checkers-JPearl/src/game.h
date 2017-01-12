@@ -21,7 +21,8 @@ namespace checkers
 		CheckerBoard *checkerBoard_;
 		Player *players_[kNumPlayers];
 		unsigned char currentPlayerTurn_;
-		int currentTurn_ = 0;
+		int winner_;
+		bool gameIsRunning_;
 
 		std::map<uint_least64_t, unsigned char> boardStateOccurences_;
 
@@ -66,11 +67,20 @@ namespace checkers
 		// For debug -- will run moves
 		void runMoves(char ** moves, int numMoves);
 
-		// The main game loop plays through the game and returns the index (1-based) of the player that won or 0 if there was a draw
-		int run();
+		// Will start the game so that it may be played with playTurn()
+		void startGame();
+
+		// The main game loop plays through a turn in the game returns whether the game has more turns to play and has not ended
+		bool playTurn();
 
 		// Find all valid moves for the given side, returns the number of moves available and stored starting from the index returned in outStartPosition
 		int findAllMoves(PieceSide side, Move * moves, int moveCapacity, int& outStartPosition) const;
+
+		// Returns whether the game is running
+		int isRunning() const;
+
+		// Returns the index(1 - based) of the player that won or 0 if there was a draw. -1 if called before the game is finished
+		int getWinner() const;
 	};
 }
 

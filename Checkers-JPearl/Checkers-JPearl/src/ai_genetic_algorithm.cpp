@@ -27,7 +27,12 @@ namespace checkers
 					game.registerPlayer(new AiPlayer(aiRecurseLevels_, population_[brainAIdx].brain), PieceSide::O);
 					game.registerPlayer(new AiPlayer(aiRecurseLevels_, population_[brainBIdx].brain), PieceSide::X);
 					game.initialize();
-					int winner = game.run();
+					game.startGame();
+					while (game.playTurn())
+					{
+						std::this_thread::yield();
+					}
+					int winner = game.getWinner();
 					switch(winner)
 					{
 					case PieceSide::O:

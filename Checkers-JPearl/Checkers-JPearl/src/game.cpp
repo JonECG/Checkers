@@ -13,6 +13,8 @@ namespace checkers
 	Game::Game(bool echoMessagesToConsole)
 	{
 		currentPlayerTurn_ = 0;
+		winner_ = -1;
+		gameIsRunning_ = false;
 		echoMessagesToConsole_ = echoMessagesToConsole;
 	}
 
@@ -413,12 +415,17 @@ namespace checkers
 		}
 	}
 
-	int Game::run()
+	void Game::startGame()
 	{
-		bool gameIsRunning = true;
-		int winner = -1;
+		currentPlayerTurn_ = 0;
+		gameIsRunning_ = true;
+		winner_ = -1;
+		currentMessage_.str("");
+	}
 
-		while (gameIsRunning)
+	bool Game::playTurn()
+	{
+		if(gameIsRunning_)
 		{
 			messageWriter() << *checkerBoard_;
 
@@ -443,8 +450,8 @@ namespace checkers
 				if (move.isForfeit())
 				{
 					messageWriter() << players_[currentPlayerTurn_]->getDescriptor() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' forfeits...\n";
-					winner = ( (currentPlayerTurn_ + 1) % kNumPlayers ) + 1;
-					gameIsRunning = false;
+					winner_ = ( (currentPlayerTurn_ + 1) % kNumPlayers ) + 1;
+					gameIsRunning_ = false;
 					break;
 				}
 
@@ -457,41 +464,48 @@ namespace checkers
 				sendMessageToPlayers();
 			}
 			
-			if (checkForWinCondition(currentPlayerTurn_))
+			if (gameIsRunning_)
 			{
-				gameIsRunning = false;
-				winner = currentPlayerTurn_ + 1;
+				if (checkForWinCondition(currentPlayerTurn_))
+				{
+					gameIsRunning_ = false;
+					winner_ = currentPlayerTurn_ + 1;
+				}
+				if (checkForDrawCondition())
+				{
+					gameIsRunning_ = false;
+					winner_ = 0;
+				}
 			}
-			if (checkForDrawCondition())
-			{
-				gameIsRunning = false;
-				winner = 0;
-			}
-			
-			currentTurn_++;
 			currentPlayerTurn_ = (currentPlayerTurn_ + 1) % kNumPlayers;
 
 			messageWriter() << "\n\n\n";
+
+
+			// If the game ended this turn, print out the results
+			if (!gameIsRunning_)
+			{
+				// Write out final board state
+				messageWriter() << *checkerBoard_;
+				switch (winner_)
+				{
+				case -1:
+					messageWriter() << "Game stopped unexpectedly. Closing!\n";
+					break;
+				case 0:
+					messageWriter() << "The game was a draw! This board state has occured " << kNumSameBoardStatesForDraw << " times.\n";
+					break;
+				default:
+					messageWriter() << players_[winner_ - 1]->getDescriptor() << "Player '" << players_[winner_ - 1]->getSymbol() << "' wins!\n";
+
+					break;
+				}
+
+				sendMessageToPlayers();
+			}
 		}
 
-		// Write out final board state
-		messageWriter() << *checkerBoard_;
-		switch (winner)
-		{
-		case -1:
-			messageWriter() << "Game stopped unexpectedly. Closing!\n";
-			break;
-		case 0:
-			messageWriter() << "The game was a draw! This board state has occured " << kNumSameBoardStatesForDraw << " times.\n";
-			break;
-		default:
-			messageWriter() << players_[winner-1]->getDescriptor() << "Player '" << players_[winner-1]->getSymbol() << "' wins!\n";
-			
-			break;
-		}
-
-		sendMessageToPlayers();
-		return winner;
+		return gameIsRunning_;
 	}
 
 	int Game::findAllMoves(PieceSide side, Move * moves, int moveCapacity, int& outStartPosition) const
@@ -561,5 +575,15 @@ namespace checkers
 
 		outStartPosition = startIndex;
 		return endIndex - startIndex;
+	}
+
+	int Game::isRunning() const
+	{
+		return gameIsRunning_;
+	}
+
+	int Game::getWinner() const
+	{
+		return winner_;
 	}
 }

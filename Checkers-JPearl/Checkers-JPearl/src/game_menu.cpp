@@ -44,9 +44,11 @@ namespace checkers
 		game.registerPlayer(playerOs, PieceSide::O);
 		game.registerPlayer(playerXs, PieceSide::X);
 		game.initialize();
-		int winner = game.run();
+		game.startGame();
+		while (game.playTurn()){}
+		int result = game.getWinner();
 		game.release();
-		return winner;
+		return result;
 	}
 
 	int GameMenu::show() const
