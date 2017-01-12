@@ -151,13 +151,14 @@ namespace checkers
 		}
 	}
 
-	void GameServer::startGame(Game & game)
+	int GameServer::runGame(Game & game)
 	{
 		// The instance now belongs to the connection that started the game.
 		// Which is the connection that requested the AI game or the 2nd connection into an online game
 		game.initialize();
-		game.run();
+		int result = game.run();
 		game.release();
+		return result;
 	}
 
 	void GameServer::startAiGame(Connection & player, int aiDifficuluty)
@@ -171,7 +172,8 @@ namespace checkers
 
 		serverMutex_.unlock();
 
-		startGame(currentGames_[gameIndex]);
+		int winner = runGame(currentGames_[gameIndex]);
+		player.sendWinner(winner);
 		player.disconnect(true); // Disconnect players on game completion
 	}
 
@@ -188,7 +190,9 @@ namespace checkers
 
 		serverMutex_.unlock();
 
-		startGame(currentGames_[gameIndex]);
+		int winner = runGame(currentGames_[gameIndex]);
+		playerOne.sendWinner(winner);
+		playerTwo.sendWinner(winner);
 		playerOne.disconnect(true); playerTwo.disconnect(true); // Disconnect players on game completion
 	}
 

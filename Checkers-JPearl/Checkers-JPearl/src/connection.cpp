@@ -386,6 +386,12 @@ namespace checkers
 		return sendPayload(MessageType::SEND_MESSAGE, message.c_str(), message.length() + 1);
 	}
 
+	bool Connection::sendWinner(int result)
+	{
+		char winner = (char)result;
+		return sendPayload(MessageType::WINNER_RESULT, &winner, sizeof winner);
+	}
+
 	bool Connection::requestInput(std::string &outResponse)
 	{
 		if (!isHosting_)
@@ -400,7 +406,7 @@ namespace checkers
 
 				const char * message = processMessage(type, length);
 
-				if (message != nullptr)
+				if (message != nullptr && length != 0 && type == MessageType::SEND_MESSAGE)
 				{
 					outResponse = std::string(message);
 					return true;

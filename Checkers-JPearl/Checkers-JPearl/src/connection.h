@@ -18,7 +18,8 @@ namespace checkers
 	{
 		SEND_MESSAGE = 0,
 		REQUEST_INPUT = 1,
-		FIN = (unsigned char)~0
+		WINNER_RESULT = 2,
+		FIN = 3
 	};
 	class ConnectionListener;
 	class Connection
@@ -62,6 +63,9 @@ namespace checkers
 
 		// Sends a message to the other end. Returns whether it was successful
 		bool sendMessage(std::string message);
+
+		// Sends the winner index to the other end. Returns whether it was successful
+		bool sendWinner(int result);
 
 		// Requests a message from the other end. Returns whether it was successful
 		bool requestInput(std::string &outResponse);

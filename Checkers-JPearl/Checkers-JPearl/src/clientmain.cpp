@@ -8,9 +8,11 @@ int main(int argc, char ** argv)
 	argc; argv;
 
 	checkers::DummyClient client;
-	client.run();
+	int result = client.run();
 
-	std::cout << "Press enter to exit...";
+	std::cout << "(" << result << ") Press enter to exit...";
 	std::string dummy;
 	std::getline(std::cin, dummy);
+
+	return result;
 }

@@ -9,7 +9,7 @@ namespace checkers
 	public:
 		static const char * kDefaultPort;
 
-		void run();
+		int run();
 	};
 }
 

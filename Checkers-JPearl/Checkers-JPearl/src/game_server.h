@@ -33,7 +33,7 @@ namespace checkers
 		void run();
 		void initConnection(Connection &connection);
 		void addOnlinePlayer(Connection &playerToAdd);
-		void startGame(Game &game);
+		int runGame(Game &game);
 		void startAiGame(Connection &player, int aiDifficuluty);
 		void startOnlineGame(Connection &playerOne, Connection &playerTwo);
 

@@ -9,7 +9,7 @@ namespace checkers
 {
 	const char * DummyClient::kDefaultPort = "32123";
 
-	void DummyClient::run()
+	int DummyClient::run()
 	{
 		std::cout << "Enter Host Address (default \"localhost\") > ";
 		std::string host = std::string();
@@ -22,6 +22,8 @@ namespace checkers
 		std::getline(std::cin, port);
 		if (port.empty())
 			port = kDefaultPort;
+
+		int winner = -1;
 
 		Connection conn;
 		if (Connection::connectTo(host.c_str(), port.c_str(), conn))
@@ -44,9 +46,14 @@ namespace checkers
 							std::cout << data << std::flush;
 							break;
 						case MessageType::REQUEST_INPUT:
+						{
 							std::string response = std::string();
 							std::getline(std::cin, response);
 							conn.sendMessage(response);
+							break;
+						}
+						case MessageType::WINNER_RESULT:
+							winner = *data;
 							break;
 						}
 					}
@@ -59,5 +66,7 @@ namespace checkers
 			std::cout << "Couldn't connect" << std::endl;
 			printSockError("");
 		}
+
+		return winner;
 	}
 }

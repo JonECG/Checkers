@@ -10,7 +10,7 @@ int main(int argc, char ** argv)
 	checkers::GameMenu menu;
 	int result = menu.show();
 
-	std::cout << "Press enter to exit...";
+	std::cout << "(" << result << ") Press enter to exit...";
 	std::string dummy;
 	std::getline(std::cin, dummy);
 

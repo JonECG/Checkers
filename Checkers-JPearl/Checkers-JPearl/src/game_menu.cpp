@@ -105,7 +105,7 @@ namespace checkers
 					break;
 				case '5':
 					DummyClient dummy;
-					dummy.run();
+					winner = dummy.run();
 					break;
 				case '6':
 					repeat = false;
