@@ -443,7 +443,7 @@ namespace checkers
 				if (move.isForfeit())
 				{
 					messageWriter() << players_[currentPlayerTurn_]->getDescriptor() << "Player '" << players_[currentPlayerTurn_]->getSymbol() << "' forfeits...\n";
-					winner = (currentPlayerTurn_ + 1) % kNumPlayers;
+					winner = ( (currentPlayerTurn_ + 1) % kNumPlayers ) + 1;
 					gameIsRunning = false;
 					break;
 				}
@@ -460,12 +460,12 @@ namespace checkers
 			if (checkForWinCondition(currentPlayerTurn_))
 			{
 				gameIsRunning = false;
-				winner = currentPlayerTurn_;
+				winner = currentPlayerTurn_ + 1;
 			}
 			if (checkForDrawCondition())
 			{
 				gameIsRunning = false;
-				winner = kNumPlayers;
+				winner = 0;
 			}
 			
 			currentTurn_++;
@@ -478,15 +478,15 @@ namespace checkers
 		messageWriter() << *checkerBoard_;
 		switch (winner)
 		{
-		case PieceSide::O:
-		case PieceSide::X:
-			messageWriter() << players_[winner]->getDescriptor() << "Player '" << players_[winner]->getSymbol() << "' wins!\n";
+		case -1:
+			messageWriter() << "Game stopped unexpectedly. Closing!\n";
 			break;
-		case kNumPlayers:
+		case 0:
 			messageWriter() << "The game was a draw! This board state has occured " << kNumSameBoardStatesForDraw << " times.\n";
 			break;
 		default:
-			messageWriter() << "Something weird happened to the game. Closing!\n";
+			messageWriter() << players_[winner-1]->getDescriptor() << "Player '" << players_[winner-1]->getSymbol() << "' wins!\n";
+			
 			break;
 		}
 
@@ -562,10 +562,4 @@ namespace checkers
 		outStartPosition = startIndex;
 		return endIndex - startIndex;
 	}
-
-	const Player * Game::getPlayer(int index) const
-	{
-		return players_[index];
-	}
-
 }

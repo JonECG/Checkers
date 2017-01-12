@@ -66,13 +66,11 @@ namespace checkers
 		// For debug -- will run moves
 		void runMoves(char ** moves, int numMoves);
 
-		// The main game loop plays through the game and returns the index of the player that won or -1 if there was a draw
+		// The main game loop plays through the game and returns the index (1-based) of the player that won or 0 if there was a draw
 		int run();
 
 		// Find all valid moves for the given side, returns the number of moves available and stored starting from the index returned in outStartPosition
 		int findAllMoves(PieceSide side, Move * moves, int moveCapacity, int& outStartPosition) const;
-
-		const Player* getPlayer(int index) const;
 	};
 }
 
