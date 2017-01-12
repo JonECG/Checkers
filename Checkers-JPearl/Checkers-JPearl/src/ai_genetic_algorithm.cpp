@@ -35,10 +35,10 @@ namespace checkers
 					int winner = game.getWinner();
 					switch(winner)
 					{
-					case PieceSide::O:
+					case PieceSide::O + 1:
 						scores_[brainAIdx].fetch_add(2);
 						break;
-					case PieceSide::X:
+					case PieceSide::X + 1:
 						scores_[brainBIdx].fetch_add(2);
 						break;
 					default:

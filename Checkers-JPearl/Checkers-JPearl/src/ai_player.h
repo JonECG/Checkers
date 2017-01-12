@@ -15,15 +15,21 @@ namespace checkers
 
 		struct Brain
 		{
-			static const int kNumWeights = 5;
+			static const int kNumWeights = 9;
 			// Valuing pieces
 			double pointsForMenAtHomeRow = 1;
 			double pointsForMenAtKingRow = 1.1;
 			double pointsForKing = 1.3;
 
-			// Small biases to promote cohesion
+			// Biases to promote cohesion
 			double pointsForMoveAvailable = 0.01;
 			double pointsForPieceInCenter = 0.02;
+
+			// Where a piece wants to be located in respect to other pieces
+			double pointsPerAdjacentAlly = 0.01;
+			double pointsPerAdjacentBoundary = 0.01;
+			double pointsPerAdjacentOpponent = -0.01;
+			double pointsPerAdjacentEmptySpace = 0.01;
 
 			// Gets all values in text format
 			friend std::ostream& operator<< (std::ostream& stream, const Brain& brain);

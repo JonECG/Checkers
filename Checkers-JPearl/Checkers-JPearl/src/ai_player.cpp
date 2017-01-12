@@ -35,6 +35,7 @@ namespace checkers
 						PieceSide side = piece->getSide();
 						int multiplier = (side == PieceSide::X) ? 1 : -1;
 
+						// Piece Value
 						if (piece->getIsKing())
 						{
 							score += brain_.pointsForKing * multiplier;
@@ -52,6 +53,30 @@ namespace checkers
 						double maxDist = CheckerBoard::kNumColumns / 2 + CheckerBoard::kNumRows / 2;
 						double distPercent = 1 - (distToCenter / maxDist);
 						score += multiplier * distPercent * brain_.pointsForPieceInCenter;
+
+
+						// Getting nearby squares
+						for (int direction = 0; direction < 4; direction++)
+						{
+							char deltaX = (direction & 0b01) ? 1 : -1;
+							char deltaY = (direction & 0b10) ? 1 : -1;
+
+							CompactCoordinate adjacent = coord;
+							adjacent.column += deltaX; adjacent.row += deltaY;
+
+							if (!game->checkerBoard_->isCoordValid(adjacent))
+							{
+								score += multiplier * brain_.pointsPerAdjacentBoundary; // This direction is stopped by the end of the board
+							}
+							else
+							{
+								CheckerPiece *adjacentPiece = game->checkerBoard_->getPiece(adjacent);
+								if (adjacentPiece)
+									score += multiplier *((adjacentPiece->getSide() == side) ? brain_.pointsPerAdjacentAlly : brain_.pointsPerAdjacentOpponent );
+								else
+									score += multiplier * brain_.pointsPerAdjacentEmptySpace;
+							}
+						}
 					}
 				}
 			}
@@ -252,6 +277,11 @@ namespace checkers
 			"pointsForMenAtKingRow : " << brain.pointsForMenAtKingRow << "\n" <<
 			"pointsForKing : " << brain.pointsForKing << "\n" <<
 			"pointsForMoveAvailable : " << brain.pointsForMoveAvailable << "\n" <<
-			"pointsForPieceInCenter : " << brain.pointsForPieceInCenter << "\n" << std::endl;
+			"pointsForPieceInCenter : " << brain.pointsForPieceInCenter << "\n" <<
+			"pointsPerAdjacentAlly : " << brain.pointsPerAdjacentAlly << "\n" <<
+			"pointsPerAdjacentBoundary : " << brain.pointsPerAdjacentBoundary << "\n" <<
+			"pointsPerAdjacentOpponent : " << brain.pointsPerAdjacentOpponent << "\n" <<
+			"pointsPerAdjacentEmptySpace : " << brain.pointsPerAdjacentEmptySpace << "\n" <<
+			std::endl;
 	}
 }

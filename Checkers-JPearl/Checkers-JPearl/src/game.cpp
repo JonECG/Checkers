@@ -162,6 +162,8 @@ namespace checkers
 
 	bool Game::canAnyPieceMove(PieceSide side, bool onlyJumpMoves, bool ignoreMarked, int * count) const
 	{
+		count = 0;
+
 		for (int x = 0; x < CheckerBoard::kNumColumns; x++)
 		{
 			for (int y = 0; y < CheckerBoard::kNumRows; y++)
