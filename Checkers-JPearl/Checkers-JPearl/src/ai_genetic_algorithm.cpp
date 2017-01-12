@@ -4,6 +4,13 @@
 
 namespace checkers
 {
+	void AiGeneticAlgorithm::resetScores()
+	{
+		for (unsigned char i = 0; i < populationSize_; i++)
+		{
+			scores_[i] = 0;
+		}
+	}
 	void AiGeneticAlgorithm::calculateFitness()
 	{
 		int currentThreadIdx = 0;
@@ -69,8 +76,43 @@ namespace checkers
 
 		fittest_ = *fittest;
 	}
+	void AiGeneticAlgorithm::mate(const AiPlayer::BrainView &parentA, const AiPlayer::BrainView &parentB, AiPlayer::BrainView &outOffspring) const
+	{
+		// We don't ever mutate the first weight -- we keep it at one in order to have it as a constant reference
+		for (int weightIdx = 1; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
+		{
+			// Randomly choose which parent to take trait
+			outOffspring.raw[weightIdx] = (std::rand() & 1) ? parentA.raw[weightIdx] : parentB.raw[weightIdx];
+		}
+	}
 	void AiGeneticAlgorithm::produceOffspring()
 	{
+		AiPlayer::Brain *offSpring = new AiPlayer::Brain[populationSize_];
+
+		// Most fit is guaranteed to be in new generation unchanged
+		offSpring[0] = fittest_;
+
+		// Create offspring
+		for (int i = 1; i < populationSize_; i++)
+		{
+			AiPlayer::BrainView *parentA;
+			unsigned char parentAIdx = buckets_[std::rand() % totalFitnessScore_]; // Weighted random
+			parentA = population_ + parentAIdx;
+
+			AiPlayer::BrainView *parentB;
+			unsigned char parentBIdx = buckets_[std::rand() % totalFitnessScore_]; // Weighted random
+			parentB = population_ + parentBIdx;
+
+			mate(*parentA, *parentB, *reinterpret_cast<AiPlayer::BrainView*>(offSpring+i));
+		}
+
+		// Fill new generation
+		for (int i = 0; i < populationSize_; i++)
+		{
+			population_[i].brain = offSpring[i];
+		}
+
+		delete[] offSpring;
 	}
 	void AiGeneticAlgorithm::mutate()
 	{
@@ -126,6 +168,11 @@ namespace checkers
 
 	void AiGeneticAlgorithm::processGeneration()
 	{
+		resetScores();
+		calculateFitness();
+		reviewFitness();
+		produceOffspring();
+		mutate();
 	}
 
 	AiPlayer::Brain AiGeneticAlgorithm::getFittest() const

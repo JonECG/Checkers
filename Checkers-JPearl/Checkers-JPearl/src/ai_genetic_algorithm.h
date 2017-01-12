@@ -29,10 +29,14 @@ namespace checkers
 
 		AiPlayer::Brain fittest_;
 
+		// Zeroes out scores from last calculateFitness()
+		void resetScores();
 		// Scores the fitness of every individual in the population
 		void calculateFitness();
 		// Reviews the fitness results from calculateFitness and populates the weighted buckets accordingly
 		void reviewFitness();
+		// Mates the two parents and outputs the resulting offspring in outOffspring
+		void mate(const AiPlayer::BrainView &parentA, const AiPlayer::BrainView &parentB, AiPlayer::BrainView &outOffspring) const;
 		// Creates a new generation by splicing pairs based on the fitness of previous one and will always keep a copy of the best performing individual unchanged
 		void produceOffspring();
 		// Mutates all members of the generation other than the fittest in varying degrees of randomness

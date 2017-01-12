@@ -7,6 +7,7 @@
 
 namespace checkers
 {
+	const AiPlayer::Brain AiPlayer::kDefaultBrain = AiPlayer::Brain();
 
 	AiPlayer::AiPlayer(int recurseLevels, Brain brain)
 	{
@@ -242,5 +243,15 @@ namespace checkers
 	{
 		message;
 		// Do nothing
+	}
+
+	std::ostream & operator<<(std::ostream & stream, const AiPlayer::Brain & brain)
+	{
+		return stream << "\n_____Brain values_____\n" <<
+			"pointsForMenAtHomeRow : " << brain.pointsForMenAtHomeRow << "\n" <<
+			"pointsForMenAtKingRow : " << brain.pointsForMenAtKingRow << "\n" <<
+			"pointsForKing : " << brain.pointsForKing << "\n" <<
+			"pointsForMoveAvailable : " << brain.pointsForMoveAvailable << "\n" <<
+			"pointsForPieceInCenter : " << brain.pointsForPieceInCenter << "\n" << std::endl;
 	}
 }

@@ -116,6 +116,7 @@ namespace checkers
 					for (int i = 0; i < 10; i++)
 					{
 						trainer.processGeneration();
+						std::cout << trainer.getFittest();
 					}
 					trainer.release();
 					break;

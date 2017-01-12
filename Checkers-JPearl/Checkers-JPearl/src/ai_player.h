@@ -24,8 +24,12 @@ namespace checkers
 			// Small biases to promote cohesion
 			double pointsForMoveAvailable = 0.01;
 			double pointsForPieceInCenter = 0.02;
-		} static const kDefaultBrain;
-		
+
+			// Gets all values in text format
+			friend std::ostream& operator<< (std::ostream& stream, const Brain& brain);
+		};
+		static const Brain kDefaultBrain;
+
 		union BrainView
 		{
 			double raw[Brain::kNumWeights];
