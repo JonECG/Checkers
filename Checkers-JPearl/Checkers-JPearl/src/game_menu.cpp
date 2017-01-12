@@ -110,14 +110,16 @@ namespace checkers
 					winner = dummy.run();
 					break;
 				case '6':
-					AiGeneticAlgorithm trainer;
-					trainer.initialize(10,0.5);
-					for (int i = 0; i < 100; i++)
+				{
+					AiGeneticAlgorithm trainer = AiGeneticAlgorithm();
+					trainer.initialize(10, 0.5, 4);
+					for (int i = 0; i < 10; i++)
 					{
 						trainer.processGeneration();
 					}
 					trainer.release();
 					break;
+				}
 				case '7':
 					repeat = false;
 					break;
