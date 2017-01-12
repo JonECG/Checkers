@@ -19,6 +19,7 @@
 
 #include <thread>
 #include <iostream>
+#include <chrono>
 
 // Using WinSock interface, some defines here to keep things clean below
 #ifdef _WIN32
@@ -135,7 +136,7 @@ namespace checkers
 
 	Connection::Connection()
 	{
-		isSending_ = false;
+		waitingForAck_ = false;
 		idxQueuedMessagesStart_ = 0;
 		idxQueuedMessagesEnd_ = 0;
 	}
@@ -150,7 +151,7 @@ namespace checkers
 
 	void Connection::runLoop()
 	{
-		while (isConnected_)
+		while (isConnected_ || waitingForAck_)
 		{
 			// As long as we haven't wrapped fully around the circular buffer
 			if (idxQueuedMessagesStart_ != (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages)
@@ -162,15 +163,35 @@ namespace checkers
 				int bytesReceived = recv(socket_, packet, meta, 0);
 				if (bytesReceived != SOCKET_ERROR && (bytesReceived != 0 || meta == 0))
 				{
-					if (*reinterpret_cast<unsigned char*>(packet) == MessageType::FIN)
+					unsigned char type = *reinterpret_cast<unsigned char*>(packet);
+					if (type == MessageType::FIN && isConnected_)
 					{
 						verboseInfo("raw received FIN packet");
+						sendPayload(checkers::MessageType::FINACK);
+						disconnect(true);
+						std::thread ackTimeOut = std::thread([this] {
+							std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
+							std::chrono::steady_clock::time_point endTime = startTime + std::chrono::milliseconds(kAckTimeoutMilliseconds);
+
+							while (waitingForAck_ && std::chrono::steady_clock::now() < endTime)
+							{
+								std::this_thread::yield();
+							}
+
+							disconnect(false);
+						});
+						ackTimeOut.detach();
+						break;
+					}
+					if (type == MessageType::FINACK)
+					{
+						verboseInfo("raw received FINACK packet");
 						disconnect(false);
-						return;
+						break;
 					}
 
 					unsigned short length = ntohs(*reinterpret_cast<unsigned short*>(packet + 1));
-					if (length == 0 || recv(socket_, packet + meta, length, 0) == length )
+					if (length == 0 || recv(socket_, packet + meta, length, 0) == length)
 					{
 						processMutex.lock();
 						idxQueuedMessagesEnd_ = (idxQueuedMessagesEnd_ + 1) % kMaxNumberOfMessages;
@@ -311,14 +332,13 @@ namespace checkers
 		return success;
 	}
 
-	void Connection::disconnect(bool waitForSendToComplete)
+	void Connection::disconnect(bool waitForAck)
 	{
 		if (isConnected_)
 		{
-			if (waitForSendToComplete)
+			if (waitForAck)
 			{
-				isSending_ = true;
-				shutdown(socket_, SHUT_RD);
+				waitingForAck_ = true;
 				sendPayload(MessageType::FIN);
 			}
 			else
@@ -328,13 +348,11 @@ namespace checkers
 			}
 			isConnected_ = false;
 		}
-		if (isSending_ && !waitForSendToComplete)
+		if (waitingForAck_ && !waitForAck)
 		{
-			sendMutex.lock();
-			shutdown(socket_, SHUT_WR);
+			shutdown(socket_, SHUT_RDWR);
 			closesocket(socket_);
-			isSending_ = false;
-			sendMutex.unlock();
+			waitingForAck_ = false;
 		}
 	}
 
@@ -455,7 +473,7 @@ namespace checkers
 
 	bool Connection::isConnected() const
 	{
-		return isConnected_;
+		return isConnected_ || waitingForAck_;
 	}
 
 	bool Connection::isHosting() const

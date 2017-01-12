@@ -211,6 +211,8 @@ namespace checkers
 			{
 				result = true;
 				isRunning_ = true;
+				currentConnectionIndex_ = 0;
+				currentGameIndex_ = 0;
 				runningThread_ = std::thread([this] { run(); });
 			}
 		}

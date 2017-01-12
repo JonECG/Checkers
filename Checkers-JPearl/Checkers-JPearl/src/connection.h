@@ -19,7 +19,8 @@ namespace checkers
 		SEND_MESSAGE = 0,
 		REQUEST_INPUT = 1,
 		WINNER_RESULT = 2,
-		FIN = 3
+		FIN = 3,
+		FINACK = 4
 	};
 	class ConnectionListener;
 	class Connection
@@ -29,11 +30,12 @@ namespace checkers
 		static int lastError_;
 		static bool isInit_;
 		static const char * connectionErrorMessage_;
-
+		static const int kAckTimeoutMilliseconds = 1000; // Wait 1 second and assume ACK was received
+		
 		unsigned int socket_;
 		bool isHosting_:1;
 		bool isConnected_:1;
-		bool isSending_:1;
+		bool waitingForAck_:1;
 
 		// Circular buffer of messages
 		unsigned char idxQueuedMessagesStart_, idxQueuedMessagesEnd_;

@@ -1,5 +1,7 @@
 #include "checker_board.h"
 
+#include <climits>
+
 #include "checker_piece.h"
 #include "move.h"
 
@@ -182,7 +184,7 @@ namespace checkers
 		*/
 
 		// Only perform the masking if we can fit in 64 bits
-		unsigned char numBits = sizeof uint_least64_t * CHAR_BIT;
+		unsigned char numBits = sizeof result * CHAR_BIT;
 		unsigned char numBitsForKingsPerPlayer = getCeiledLog2(kNumPiecesPerPlayer);
 		unsigned char numBitsRequired = kNumPieces * 2 + (kNumCells - kNumPieces) + numBitsForKingsPerPlayer * 2;
 		if (numBitsRequired <= numBits )
