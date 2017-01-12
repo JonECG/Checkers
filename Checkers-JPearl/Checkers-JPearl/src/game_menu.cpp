@@ -12,6 +12,8 @@
 
 #include "dummy_client.h"
 
+#include "ai_genetic_algorithm.h"
+
 namespace checkers
 {
 	int GameMenu::promptAiLevel(const char * message) const
@@ -54,7 +56,6 @@ namespace checkers
 		bool repeat = true;
 
 		checkers::GameServer gameServer;
-
 		gameServer.initialize();
 
 		while (repeat)
@@ -66,7 +67,8 @@ namespace checkers
 				"3) Watch a game played between AIs" << std::endl <<
 				(gameServer.isRunning() ? "4) Stop Network Game Server" : "4) Start Network Game Server") << std::endl <<
 				"5) Start as Client" << std::endl <<
-				"6) Quit" << std::endl <<
+				"6) Run AI Genetic Algorithm to train weights" << std::endl <<
+				"7) Quit" << std::endl <<
 				"Your Choice > ";
 
 			std::string choice;
@@ -108,6 +110,15 @@ namespace checkers
 					winner = dummy.run();
 					break;
 				case '6':
+					AiGeneticAlgorithm trainer;
+					trainer.initialize(10,0.5);
+					for (int i = 0; i < 100; i++)
+					{
+						trainer.processGeneration();
+					}
+					trainer.release();
+					break;
+				case '7':
 					repeat = false;
 					break;
 				default:

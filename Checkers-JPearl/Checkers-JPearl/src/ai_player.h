@@ -9,20 +9,24 @@ namespace checkers
 	class Game;
 	class CheckerBoard;
 
-	struct MoveHistory
-	{
-		CompactCoordinate from, to;
-		CheckerPiece *piece;
-	};
-	
 	class AiPlayer : public Player
 	{
+	public:
+		struct Brain
+		{
+
+		} static const kDefaultBrain;
+	private:
 		static const int kNumHistoryRemembered = 32;
+		struct MoveHistory
+		{
+			CompactCoordinate from, to;
+			CheckerPiece *piece;
+		} historyRemembered_[kNumHistoryRemembered];
+		int currentHistoryIndex_;
 
 		int recurseLevels_;
-		int currentHistoryIndex_;
-		MoveHistory historyRemembered_[kNumHistoryRemembered];
-
+		Brain brain_;
 
 		// Evaluates the value of a given board state. Negative in favor of O and positive in favor of X
 		double evaluateBoardState(const Game * game) const;
@@ -33,7 +37,9 @@ namespace checkers
 		// Finds the best move in terms of possible value from all available moves. Returns the move most in favor of the given side and its score in the outBestScore parameter. Also keeps track of worst score
 		Move* findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double& outBestScore, double& outWorstScore, bool useHistory = false ) const;
 	public:
-		AiPlayer(int recurseLevels);
+		
+
+		AiPlayer(int recurseLevels, Brain brain = kDefaultBrain);
 
 		const char * getDescriptor() const override;
 		Move requestMove() override;

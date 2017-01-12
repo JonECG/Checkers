@@ -89,6 +89,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ai_genetic_algorithm.cpp" />
     <ClCompile Include="src\ai_player.cpp" />
     <ClCompile Include="src\checker_board.cpp" />
     <ClCompile Include="src\checker_piece.cpp" />
@@ -104,6 +105,7 @@
     <ClCompile Include="src\player.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ai_genetic_algorithm.h" />
     <ClInclude Include="src\ai_player.h" />
     <ClInclude Include="src\checker_board.h" />
     <ClInclude Include="src\checker_piece.h" />

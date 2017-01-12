@@ -7,10 +7,11 @@
 
 namespace checkers
 {
-	
-	AiPlayer::AiPlayer(int recurseLevels)
+
+	AiPlayer::AiPlayer(int recurseLevels, Brain brain)
 	{
 		recurseLevels_ = recurseLevels;
+		brain_ = brain;
 	}
 
 	double AiPlayer::evaluateBoardState(const Game * game) const
