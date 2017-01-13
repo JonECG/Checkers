@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include <mutex>
 #include "game.h"
 
 namespace checkers
@@ -15,7 +16,17 @@ namespace checkers
 	}
 	void AiGeneticAlgorithm::calculateFitness()
 	{
-		int currentThreadIdx = 0;
+		// Poor man's thread pool
+		unsigned char* freeThreadIndices = new unsigned char[numberOfInstances_];
+		unsigned char freeThreadIndicesStart = 0;
+		unsigned char freeThreadIndicesEnd = 0;
+		std::atomic<int> numFinishedGames = 0;
+		std::mutex poolLock;
+		for (unsigned char i = 0; i < numberOfInstances_; i++)
+		{
+			freeThreadIndices[i] = i;
+		}
+
 
 		for (unsigned char brainAIdx = 0; brainAIdx < populationSize_; brainAIdx++)
 		{
@@ -24,7 +35,29 @@ namespace checkers
 				if (brainAIdx == brainBIdx)
 					continue; // We can't have the same brain fight itself
 
-				instances_[currentThreadIdx] = std::thread([this, currentThreadIdx, brainAIdx, brainBIdx] {
+				// Wait until a thread is available
+				unsigned char availableThread = numberOfInstances_;
+				while (availableThread == numberOfInstances_)
+				{
+					poolLock.lock();
+					unsigned char firstClosedSpot = (freeThreadIndicesEnd + 1) % numberOfInstances_;
+					if (freeThreadIndicesStart != firstClosedSpot)
+					{
+						availableThread = freeThreadIndices[freeThreadIndicesEnd];
+						freeThreadIndicesEnd = firstClosedSpot;
+					}
+					poolLock.unlock();
+					std::this_thread::yield();
+				}
+
+				
+
+				// Make sure it's finished
+				if (instances_[availableThread].joinable())
+					instances_[availableThread].join();
+
+				// Spin off a new thread simulating the game
+				instances_[availableThread] = std::thread([this, availableThread, &numFinishedGames, &poolLock, brainAIdx, brainBIdx, freeThreadIndices, &freeThreadIndicesStart, &freeThreadIndicesEnd] {
 					Game game = Game();
 					game.registerPlayer(new AiPlayer(aiRecurseLevels_, population_[brainAIdx].brain), PieceSide::O);
 					game.registerPlayer(new AiPlayer(aiRecurseLevels_, population_[brainBIdx].brain), PieceSide::X);
@@ -48,17 +81,37 @@ namespace checkers
 						scores_[brainBIdx].fetch_add(1);
 					}
 					game.release();
+
+					// Mark this thread as available again
+					bool freedInstance = false;
+					while (!freedInstance)
+					{
+						poolLock.lock();
+						if (freeThreadIndicesStart != freeThreadIndicesEnd)
+						{
+							freeThreadIndices[freeThreadIndicesStart] = availableThread;
+							freeThreadIndicesStart = (freeThreadIndicesStart + 1) % numberOfInstances_;
+							numFinishedGames++;
+							freedInstance = true;
+						}
+						poolLock.unlock();
+						std::this_thread::yield();
+					}
 				});
 
-				currentThreadIdx++;
 			}
 		}
 
-		// Wait for all of the results
-		for (int i = 0; i < currentThreadIdx; i++)
+
+		// Wait for the results for the rest of the batch
+		for(unsigned char i = 0; i < numberOfInstances_; i++)
 		{
-			instances_[i].join();
+			if(instances_[i].joinable())
+				instances_[i].join();
+
 		}
+
+		delete[] freeThreadIndices;
 	}
 	void AiGeneticAlgorithm::reviewFitness()
 	{
@@ -157,12 +210,12 @@ namespace checkers
 		maxRandomPerGeneration_ = maxRandom;
 		aiRecurseLevels_ = aiRecurseLevels;
 
-		// Round Robin 1 point per win, but each pair plays two games so each side has a chance of going first as O
-		numberOfInstances_ = populationSize_ * (populationSize_ - 1);
-		totalFitnessScore_ = numberOfInstances_ * 2; // Two points awarded per game 
+		// Round Robin 1 point per win, but each pair plays two games so each side has a chance of going first as O and there are two points awarded per game
+		totalFitnessScore_ = populationSize_ * (populationSize_ - 1) * 2;
 
 		// Allocate arrays
 		population_ = reinterpret_cast<AiPlayer::BrainView*>(new AiPlayer::Brain[populationSize_]);
+		numberOfInstances_ = (unsigned char)std::thread::hardware_concurrency();
 		instances_ = new std::thread[numberOfInstances_];
 		scores_ = new std::atomic<unsigned char>[populationSize_];
 		buckets_ = new unsigned char[totalFitnessScore_];

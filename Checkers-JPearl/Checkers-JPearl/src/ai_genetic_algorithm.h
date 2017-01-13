@@ -12,7 +12,7 @@ namespace checkers
 	class AiGeneticAlgorithm
 	{
 		unsigned char populationSize_;
-		int numberOfInstances_;
+		unsigned char numberOfInstances_;
 		int totalFitnessScore_;
 
 		int aiRecurseLevels_;
