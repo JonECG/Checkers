@@ -125,7 +125,7 @@ namespace checkers
 	{
 		for (int brainIdx = 1; brainIdx < populationSize_; brainIdx++)
 		{
-			double randomStrength = (maxRandom_ * brainIdx) / populationSize_;
+			double randomStrength = (maxRandomPerGeneration_ * brainIdx) / populationSize_;
 
 			// We don't ever mutate the first weight -- we keep it at one in order to have it as a constant reference
 			for (int weightIdx = 1; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
@@ -154,7 +154,7 @@ namespace checkers
 	void AiGeneticAlgorithm::initialize(unsigned char populationSize, double maxRandom, int aiRecurseLevels )
 	{
 		populationSize_ = populationSize;
-		maxRandom_ = maxRandom;
+		maxRandomPerGeneration_ = maxRandom;
 		aiRecurseLevels_ = aiRecurseLevels;
 
 		// Round Robin 1 point per win, but each pair plays two games so each side has a chance of going first as O
@@ -186,6 +186,20 @@ namespace checkers
 		delete[] instances_;
 		delete[] scores_;
 		delete[] buckets_;
+	}
+
+	void AiGeneticAlgorithm::randomize(double maxRandom)
+	{
+		for (int brainIdx = 0; brainIdx < populationSize_; brainIdx++)
+		{
+			// We don't ever mutate the first weight -- we keep it at one in order to have it as a constant reference
+			for (int weightIdx = 1; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
+			{
+				double fraction = std::rand() / (double)RAND_MAX;
+				fraction = maxRandom * (fraction * 2 - 1);
+				population_[brainIdx].raw[weightIdx] = fraction;
+			}
+		}
 	}
 
 	void AiGeneticAlgorithm::processGeneration(const char * outputCsvPath)

@@ -16,7 +16,7 @@ namespace checkers
 		int totalFitnessScore_;
 
 		int aiRecurseLevels_;
-		double maxRandom_;
+		double maxRandomPerGeneration_;
 
 		// The current generation of brains
 		AiPlayer::BrainView *population_;
@@ -47,8 +47,11 @@ namespace checkers
 
 	public:
 		// Initializes the GA with the given population size and the limit of randomness that can occur each generation 
-		void initialize(unsigned char populationSize, double maxRandom, int aiRecurseLevels);
+		void initialize(unsigned char populationSize, double maxRandomPerGeneration, int aiRecurseLevels);
 		void release();
+
+		// Randomizes all of the current generation in the range of -maxRandom to +maxRandom
+		void randomize(double maxRandom);
 
 		// Processes a new generation. Get the fittest afterwards with getFittest(). If given a path, will append to it in csv with the fittest brain's values creating a new file if it doesn't exist
 		void processGeneration( const char * outputCsvPath = nullptr );
