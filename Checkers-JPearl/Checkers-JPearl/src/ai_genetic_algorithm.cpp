@@ -1,5 +1,7 @@
 #include "ai_genetic_algorithm.h"
 
+#include <fstream>
+
 #include "game.h"
 
 namespace checkers
@@ -134,6 +136,21 @@ namespace checkers
 			}
 		}
 	}
+	void AiGeneticAlgorithm::recordFittest(const char * path)
+	{
+		std::ofstream recordFile;
+
+		recordFile.open(path, std::ios_base::app);
+		for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
+		{
+			recordFile << reinterpret_cast<AiPlayer::BrainView*>(&fittest_)->raw[weightIdx];
+			if (weightIdx != AiPlayer::Brain::kNumWeights - 1)
+				recordFile << ',';
+		}
+		recordFile << std::endl;
+
+		recordFile.close();
+	}
 	void AiGeneticAlgorithm::initialize(unsigned char populationSize, double maxRandom, int aiRecurseLevels )
 	{
 		populationSize_ = populationSize;
@@ -171,13 +188,16 @@ namespace checkers
 		delete[] buckets_;
 	}
 
-	void AiGeneticAlgorithm::processGeneration()
+	void AiGeneticAlgorithm::processGeneration(const char * outputCsvPath)
 	{
 		resetScores();
 		calculateFitness();
 		reviewFitness();
 		produceOffspring();
 		mutate();
+		
+		if (outputCsvPath)
+			recordFittest(outputCsvPath);
 	}
 
 	AiPlayer::Brain AiGeneticAlgorithm::getFittest() const

@@ -114,11 +114,13 @@ namespace checkers
 				case '6':
 				{
 					AiGeneticAlgorithm trainer = AiGeneticAlgorithm();
-					trainer.initialize(10, 0.5, 4);
-					for (int i = 0; i < 10; i++)
+					trainer.initialize(10, 0.5, 3 );
+					for (int i = 0; i < 100; i++)
 					{
-						trainer.processGeneration();
+						trainer.processGeneration("./fittestByGeneration.csv");
 						std::cout << trainer.getFittest();
+
+						// Write fittest to csv
 					}
 					trainer.release();
 					break;

@@ -41,11 +41,17 @@ namespace checkers
 		void produceOffspring();
 		// Mutates all members of the generation other than the fittest in varying degrees of randomness
 		void mutate();
+
+		// Writes fittest to end of file in csv
+		void recordFittest(const char * path);
+
 	public:
-		// Initializes the GA with the given population size and the limit of randomness that can occur each generation
+		// Initializes the GA with the given population size and the limit of randomness that can occur each generation 
 		void initialize(unsigned char populationSize, double maxRandom, int aiRecurseLevels);
 		void release();
-		void processGeneration();
+
+		// Processes a new generation. Get the fittest afterwards with getFittest(). If given a path, will append to it in csv with the fittest brain's values creating a new file if it doesn't exist
+		void processGeneration( const char * outputCsvPath = nullptr );
 
 		// Returns a pointer to the current fittest as evaluated by the previous generation
 		AiPlayer::Brain getFittest() const;
