@@ -3,6 +3,8 @@
 #include <fstream>
 
 #include <mutex>
+#include <iostream>
+
 #include "game.h"
 
 namespace checkers
@@ -27,6 +29,15 @@ namespace checkers
 			freeThreadIndices[i] = i;
 		}
 
+
+		// Show a progress bar
+		const int barWidth = 50;
+		const char progressBarBackground = (unsigned char)176;
+		const char progressBarForeground = (unsigned char)178;
+		for (int i = 0; i < barWidth; i++)
+			std::cout << progressBarBackground;
+		std::cout << '\r' << std::flush;
+		int currentProgressPoint = 0;
 
 		for (unsigned char brainAIdx = 0; brainAIdx < populationSize_; brainAIdx++)
 		{
@@ -99,6 +110,13 @@ namespace checkers
 					}
 				});
 
+				
+				while ( barWidth * numFinishedGames / ((double)populationSize_*(populationSize_ - 1)) > currentProgressPoint )
+				{
+					std::cout << progressBarForeground << std::flush;
+					currentProgressPoint++;
+				}
+				
 			}
 		}
 
@@ -109,7 +127,14 @@ namespace checkers
 			if(instances_[i].joinable())
 				instances_[i].join();
 
+			while (barWidth * numFinishedGames / ((double)populationSize_*(populationSize_-1)) > currentProgressPoint)
+			{
+				std::cout << progressBarForeground << std::flush;
+				currentProgressPoint++;
+			}
 		}
+
+		std::cout << std::endl;
 
 		delete[] freeThreadIndices;
 	}
