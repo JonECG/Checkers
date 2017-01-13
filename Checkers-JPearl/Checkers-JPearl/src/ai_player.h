@@ -43,14 +43,6 @@ namespace checkers
 		};
 
 	private:
-		static const int kNumHistoryRemembered = 32;
-		struct MoveHistory
-		{
-			CompactCoordinate from, to;
-			CheckerPiece *piece;
-		} historyRemembered_[kNumHistoryRemembered];
-		int currentHistoryIndex_;
-
 		int recurseLevels_;
 		Brain brain_;
 
@@ -58,10 +50,8 @@ namespace checkers
 		double evaluateBoardState(const Game * game) const;
 		// Evaluates the value of a given move and how the game could play from that point on. Negative in favor of O and positive in favor of X
 		double evaluateMove(const Move& move, PieceSide side, double previousBoardScore, int recurseLevels, double &intrinsicScore) const;
-		// Returns whether the given move has already been made recently
-		bool isMoveInHistory(const Move& move) const;
 		// Finds the best move in terms of possible value from all available moves. Returns the move most in favor of the given side and its score in the outBestScore parameter. Also keeps track of worst score
-		Move* findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double& outBestScore, double& outWorstScore, bool useHistory = false ) const;
+		Move* findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double& outBestScore, double& outWorstScore) const;
 	public:
 		
 

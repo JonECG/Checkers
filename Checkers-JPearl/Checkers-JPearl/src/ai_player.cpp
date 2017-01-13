@@ -149,22 +149,7 @@ namespace checkers
 		return score;
 	}
 
-	bool AiPlayer::isMoveInHistory(const Move & move) const
-	{
-		CheckerPiece *piece = getGame()->checkerBoard_->getPiece(move.getCoordinate(0));
-		for (int i = 0; i < kNumHistoryRemembered; i++)
-		{
-			if (historyRemembered_[i].from.column == move.getCoordinate(0).column && 
-				historyRemembered_[i].to.column == move.getCoordinate(1).column && 
-				historyRemembered_[i].from.row == move.getCoordinate(0).row &&
-				historyRemembered_[i].to.row == move.getCoordinate(1).row &&
-				historyRemembered_[i].piece == piece)
-				return true;
-		}
-		return false;
-	}
-
-	Move * AiPlayer::findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double &outBestScore, double & outWorstScore, bool useHistory) const
+	Move * AiPlayer::findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double &outBestScore, double & outWorstScore) const
 	{
 		int startIndex = 0;
 		int numPossibleMoves = getGame()->findAllMoves(side, moves, capacity, startIndex);
@@ -199,9 +184,6 @@ namespace checkers
 
 		for (int i = 0; i < numPossibleMoves; i++)
 		{
-			if (useHistory && isMoveInHistory(moves[i + startIndex]))
-				continue; // Skip evaluating move if it's been made recently
-
 			double value = evaluateMove(moves[i + startIndex], side, currentBoardScore, recurseLevels, intrinsicScoreStore);
 			// Find best value in favor of this side
 			if ( !found || ( (value > outBestScore) ^ (side == PieceSide::O) ) )
@@ -240,22 +222,7 @@ namespace checkers
 		double score = 0;
 		double worstScore = 0;
 		double boardScore = evaluateBoardState(getGame());
- 		Move move = *findBestMove(moves, Game::kMoveArraySize, getControllingSide(), boardScore, recurseLevels_, score, worstScore, true);
-
-		// If this was an adjacent move, add it to the history
-		if (move.getNumCoords() == 2)
-		{
-			CompactCoordinate from = move.getCoordinate(0);
-			CompactCoordinate to = move.getCoordinate(1);
-			if (std::abs(to.column - from.column) == 1)
-			{
-				MoveHistory history = MoveHistory();
-				history.from = from; history.to = to;
-				history.piece = getGame()->checkerBoard_->getPiece(from);
-				historyRemembered_[currentHistoryIndex_] = history;
-				currentHistoryIndex_ = (currentHistoryIndex_ + 1) % kNumHistoryRemembered;
-			}
-		}
+ 		Move move = *findBestMove(moves, Game::kMoveArraySize, getControllingSide(), boardScore, recurseLevels_, score, worstScore);
 
 #ifdef DEBUG
 		std::cout << "AI sees board state as  " << boardScore << std::endl;
