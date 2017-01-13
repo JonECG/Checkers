@@ -92,7 +92,7 @@ namespace checkers
 		return score;
 	}
 
-	double AiPlayer::evaluateMove(const Move &move, PieceSide side, double previousBoardScore, int recurseLevels, double &intrinsicScore) const
+	double AiPlayer::evaluateMove(const Move &move, PieceSide side, double previousBoardScore, double &intrinsicScore, int currentRecursionLevel) const
 	{
 		Game * game = getGame();
 
@@ -113,7 +113,7 @@ namespace checkers
 		if (winningMove)
 			score += (side == PieceSide::O) ? -100 : 100;
 
-		if (recurseLevels > 0 && !winningMove)
+		if (currentRecursionLevel < recurseLevels_ && !winningMove)
 		{
 			// From this board state find all moves the opponent can make
 			
@@ -123,7 +123,7 @@ namespace checkers
 
 			PieceSide otherSide = (side == PieceSide::O) ? PieceSide::X : PieceSide::O;
 
-			findBestMove(moves, Game::kMoveArraySize, otherSide, boardScore, recurseLevels - 1, futureBestScore, futureWorstScore);
+			findBestMove(moves, Game::kMoveArraySize, otherSide, boardScore, futureBestScore, futureWorstScore, currentRecursionLevel + 1);
 
 			static double kUncertaintyPenalty = 0.95;
 			double predictScore = futureBestScore * kUncertaintyPenalty;
@@ -149,7 +149,7 @@ namespace checkers
 		return score;
 	}
 
-	Move * AiPlayer::findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double &outBestScore, double & outWorstScore) const
+	Move * AiPlayer::findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, double &outBestScore, double & outWorstScore, int currentRecursionLevel) const
 	{
 		int startIndex = 0;
 		int numPossibleMoves = getGame()->findAllMoves(side, moves, capacity, startIndex);
@@ -164,10 +164,12 @@ namespace checkers
 
 		if (numPossibleMoves == 1)
 		{
-			// Early out if only one move available
-			outBestScore = evaluateMove(moves[startIndex], side, currentBoardScore, recurseLevels, intrinsicScoreStore);
-			outWorstScore = outBestScore;
-
+			// Early out if only one move available and is the first level of recursion
+			if (recurseLevels_ != 0)
+			{
+				outBestScore = evaluateMove(moves[startIndex], side, currentBoardScore, intrinsicScoreStore, currentRecursionLevel);
+				outWorstScore = outBestScore;
+			}
 #ifdef DEBUG
 			for (int i = recurseLevels; i < recurseLevels_; i++)
 			{
@@ -184,7 +186,7 @@ namespace checkers
 
 		for (int i = 0; i < numPossibleMoves; i++)
 		{
-			double value = evaluateMove(moves[i + startIndex], side, currentBoardScore, recurseLevels, intrinsicScoreStore);
+			double value = evaluateMove(moves[i + startIndex], side, currentBoardScore, intrinsicScoreStore, currentRecursionLevel);
 			// Find best value in favor of this side
 			if ( !found || ( (value > outBestScore) ^ (side == PieceSide::O) ) )
 			{
@@ -222,7 +224,7 @@ namespace checkers
 		double score = 0;
 		double worstScore = 0;
 		double boardScore = evaluateBoardState(getGame());
- 		Move move = *findBestMove(moves, Game::kMoveArraySize, getControllingSide(), boardScore, recurseLevels_, score, worstScore);
+ 		Move move = *findBestMove(moves, Game::kMoveArraySize, getControllingSide(), boardScore, score, worstScore);
 
 #ifdef DEBUG
 		std::cout << "AI sees board state as  " << boardScore << std::endl;

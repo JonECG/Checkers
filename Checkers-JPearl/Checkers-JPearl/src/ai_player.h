@@ -49,9 +49,9 @@ namespace checkers
 		// Evaluates the value of a given board state. Negative in favor of O and positive in favor of X
 		double evaluateBoardState(const Game * game) const;
 		// Evaluates the value of a given move and how the game could play from that point on. Negative in favor of O and positive in favor of X
-		double evaluateMove(const Move& move, PieceSide side, double previousBoardScore, int recurseLevels, double &intrinsicScore) const;
+		double evaluateMove(const Move& move, PieceSide side, double previousBoardScore, double &intrinsicScore, int currentRecursionLevel) const;
 		// Finds the best move in terms of possible value from all available moves. Returns the move most in favor of the given side and its score in the outBestScore parameter. Also keeps track of worst score
-		Move* findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, int recurseLevels, double& outBestScore, double& outWorstScore) const;
+		Move* findBestMove(Move *moves, int capacity, PieceSide side, double currentBoardScore, double& outBestScore, double& outWorstScore, int currentRecursionLevel = 0 ) const;
 	public:
 		
 
