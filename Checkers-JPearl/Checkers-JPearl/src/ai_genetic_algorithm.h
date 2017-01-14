@@ -22,8 +22,6 @@ namespace checkers
 
 		// The current generation of brains
 		AiPlayer::BrainView *population_;
-		// The simulations that set score between brains
-		std::thread *instances_;
 		// The collections of scores for each brain
 		unsigned char *scores_;
 		// An array to represent weighted random for fast indexing during offspring

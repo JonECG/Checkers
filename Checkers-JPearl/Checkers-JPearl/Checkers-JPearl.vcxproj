@@ -103,6 +103,7 @@
     <ClCompile Include="src\move.cpp" />
     <ClCompile Include="src\network_player.cpp" />
     <ClCompile Include="src\player.cpp" />
+    <ClCompile Include="src\thread_pool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ai_genetic_algorithm.h" />
@@ -119,6 +120,7 @@
     <ClInclude Include="src\move.h" />
     <ClInclude Include="src\network_player.h" />
     <ClInclude Include="src\player.h" />
+    <ClInclude Include="src\thread_pool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

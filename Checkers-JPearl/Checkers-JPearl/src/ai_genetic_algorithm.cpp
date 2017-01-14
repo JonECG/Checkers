@@ -5,6 +5,7 @@
 #include <mutex>
 #include <iostream>
 
+#include "thread_pool.h"
 #include "game.h"
 
 namespace checkers
@@ -19,15 +20,8 @@ namespace checkers
 	void AiGeneticAlgorithm::calculateFitness()
 	{
 		// Poor man's thread pool
-		unsigned char* freeThreadIndices = new unsigned char[numberOfInstances_];
-		unsigned char freeThreadIndicesStart = 0;
-		unsigned char freeThreadIndicesEnd = 0;
-		std::atomic<int> numFinishedGames = 0;
-		std::mutex poolLock;
-		for (unsigned char i = 0; i < numberOfInstances_; i++)
-		{
-			freeThreadIndices[i] = i;
-		}
+		ThreadPool pool;
+		pool.initialize();
 
 
 		// Show a progress bar
@@ -39,6 +33,7 @@ namespace checkers
 			std::cout << progressBarBackground;
 		std::cout << '\r' << std::flush;
 		int currentProgressPoint = 0;
+		int numFinishedGames = 0;
 
 
 		// Set up the brackets
@@ -66,29 +61,9 @@ namespace checkers
 					unsigned char brainAIdx = brackets[roundStartIndex + currentMatch * 2];
 					unsigned char brainBIdx = brackets[roundStartIndex + currentMatch * 2 + 1];
 
-
-					// Wait until a thread is available
-					unsigned char availableThread = numberOfInstances_;
-					while (availableThread == numberOfInstances_)
-					{
-						poolLock.lock();
-						unsigned char firstClosedSpot = (freeThreadIndicesEnd + 1) % numberOfInstances_;
-						if (freeThreadIndicesStart != firstClosedSpot)
-						{
-							availableThread = freeThreadIndices[freeThreadIndicesEnd];
-							freeThreadIndicesEnd = firstClosedSpot;
-						}
-						poolLock.unlock();
-						std::this_thread::yield();
-					}
-
-					// Make sure it's finished
-					if (instances_[availableThread].joinable())
-						instances_[availableThread].join();
-
-					// Spin off a new thread simulating the game
-					instances_[availableThread] = std::thread([this, &numFinishedGames, brainAIdx, brainBIdx, bracketsBackbuffer, currentWinnerIndex, currentLoserIndex, &progressLock, progressBarForeground,
-																barWidth, &currentProgressPoint, availableThread, &poolLock, freeThreadIndices, &freeThreadIndicesStart, &freeThreadIndicesEnd ] {
+					// Spin off a new job simulating the game
+					pool.addJob([this, &numFinishedGames, brainAIdx, brainBIdx, bracketsBackbuffer, currentWinnerIndex, currentLoserIndex, &progressLock, progressBarForeground,
+																barWidth, &currentProgressPoint ] {
 						Game game = Game();
 						unsigned char aScore = 0;
 						unsigned char bScore = 0;
@@ -130,29 +105,14 @@ namespace checkers
 						bracketsBackbuffer[currentWinnerIndex] = aScore >= bScore ? brainAIdx : brainBIdx;
 						bracketsBackbuffer[currentLoserIndex] = aScore >= bScore ? brainBIdx : brainAIdx;
 
-						
+						numFinishedGames++;
+
 						while ((barWidth+1) * numFinishedGames / (totalFitnessScore_ / 4.0) > currentProgressPoint)
 						{
 							std::cout << progressBarForeground << std::flush;
 							currentProgressPoint++;
 						}
 						progressLock.unlock();
-
-						// Mark this thread as available again
-						bool freedInstance = false;
-						while (!freedInstance)
-						{
-							poolLock.lock();
-							if (freeThreadIndicesStart != freeThreadIndicesEnd)
-							{
-								freeThreadIndices[freeThreadIndicesStart] = availableThread;
-								freeThreadIndicesStart = (freeThreadIndicesStart + 1) % numberOfInstances_;
-								numFinishedGames++;
-								freedInstance = true;
-							}
-							poolLock.unlock();
-							std::this_thread::yield();
-						}
 					});
 
 
@@ -161,13 +121,8 @@ namespace checkers
 				}
 			}
 
-
-			// Wait for the results for the rest of the batch
-			for (unsigned char i = 0; i < numberOfInstances_; i++)
-			{
-				if (instances_[i].joinable())
-					instances_[i].join();
-			}
+			// Wait for the round to be complete
+			pool.join();
 
 
 			// Buffer swap
@@ -181,7 +136,7 @@ namespace checkers
 
 		std::cout << std::endl;
 
-		delete[] freeThreadIndices;
+		pool.release();
 		delete[] brackets;
 		delete[] bracketsBackbuffer;
 	}
@@ -354,8 +309,6 @@ namespace checkers
 
 		// Allocate arrays
 		population_ = reinterpret_cast<AiPlayer::BrainView*>(new AiPlayer::Brain[populationSize_]);
-		numberOfInstances_ = (unsigned char)std::thread::hardware_concurrency();
-		instances_ = new std::thread[numberOfInstances_];
 		scores_ = new unsigned char[populationSize_];
 		buckets_ = new unsigned char[totalFitnessScore_];
 
@@ -392,7 +345,6 @@ namespace checkers
 
 		// Deallocate arrays
 		delete[] population_;
-		delete[] instances_;
 		delete[] scores_;
 		delete[] buckets_;
 	}
