@@ -185,7 +185,13 @@ namespace checkers
 			parentA = population_ + parentAIdx;
 
 			AiPlayer::BrainView *parentB;
-			unsigned char parentBIdx = buckets_[std::rand() % totalFitnessScore_]; // Weighted random
+			unsigned char parentBIdx = buckets_[std::rand() % (totalFitnessScore_ - scores_[parentAIdx])]; // Weighted random but excluding parent A
+			if (parentBIdx == parentAIdx)
+			{
+				// Can't have both parents be the same
+				parentBIdx += scores_[parentAIdx];
+				parentB = population_ + parentBIdx;
+			}
 			parentB = population_ + parentBIdx;
 
 			mate(*parentA, *parentB, *reinterpret_cast<AiPlayer::BrainView*>(offSpring+i));
