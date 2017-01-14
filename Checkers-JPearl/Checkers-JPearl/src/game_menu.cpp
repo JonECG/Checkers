@@ -113,14 +113,23 @@ namespace checkers
 					break;
 				case '6':
 				{
+					int testAiLevel = promptAiLevel("Enter the difficulty level for the AI to be trained on");
 					AiGeneticAlgorithm trainer = AiGeneticAlgorithm();
-					trainer.initialize(4, 0.1, 2, "./fittestByGeneration.csv");
-					//trainer.randomize();
-					for (int i = 0; i < 1000; i++)
+					trainer.initialize(4, 0.1, testAiLevel, "./fittestByGeneration.csv");
+					for (int i = 0; i < 10; i++)
 					{
 						trainer.processGeneration();
 						std::cout << i << "\n" << trainer.getFittest() << std::endl;
 					}
+
+					// Play against the default
+					int wins = 0;
+					if (playGame(new checkers::AiPlayer(testAiLevel), new AiPlayer(testAiLevel, trainer.getFittest())) == PieceSide::X + 1)
+						wins++;
+					if (playGame(new checkers::AiPlayer(testAiLevel,trainer.getFittest()), new AiPlayer(testAiLevel)) == PieceSide::O + 1)
+						wins++;
+					std::cout << "The fittest generation beat the previous default on " << wins << " sides." << std::endl;
+
 					trainer.release();
 					break;
 				}
