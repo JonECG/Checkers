@@ -140,7 +140,7 @@ namespace checkers
 			double predictScore = futureBestScore * kUncertaintyPenalty;
 
 #ifdef DEBUG
-			for (int i = recurseLevels; i <= recurseLevels_; i++)
+			for (int i = 0; i <= currentRecursionLevel; i++)
 			{
 				std::cout << "    ";
 			}
@@ -182,7 +182,7 @@ namespace checkers
 				outWorstScore = outBestScore;
 			}
 #ifdef DEBUG
-			for (int i = recurseLevels; i < recurseLevels_; i++)
+			for (int i = 0; i < currentRecursionLevel; i++)
 			{
 				std::cout << "    ";
 			}
@@ -211,7 +211,7 @@ namespace checkers
 			}
 
 #ifdef DEBUG
-			for (int whiteSpace = recurseLevels; whiteSpace < recurseLevels_; whiteSpace++)
+			for (int whiteSpace = 0; whiteSpace < currentRecursionLevel; whiteSpace++)
 			{
 				std::cout << "    ";
 			}
