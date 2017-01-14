@@ -123,13 +123,14 @@ namespace checkers
 							game.release();
 						}
 
-						scores_[brainAIdx].fetch_add(aScore);
-						scores_[brainBIdx].fetch_add(bScore);
+						progressLock.lock();
+						scores_[brainAIdx] += aScore;
+						scores_[brainBIdx] += bScore;
 
 						bracketsBackbuffer[currentWinnerIndex] = aScore >= bScore ? brainAIdx : brainBIdx;
 						bracketsBackbuffer[currentLoserIndex] = aScore >= bScore ? brainBIdx : brainAIdx;
 
-						progressLock.lock();
+						
 						while ((barWidth+1) * numFinishedGames / (totalFitnessScore_ / 4.0) > currentProgressPoint)
 						{
 							std::cout << progressBarForeground << std::flush;
@@ -184,28 +185,61 @@ namespace checkers
 		delete[] brackets;
 		delete[] bracketsBackbuffer;
 	}
-	void AiGeneticAlgorithm::reviewFitness()
+	void AiGeneticAlgorithm::sortIndices(unsigned char * indices, unsigned const char * data, int count) const
 	{
-		AiPlayer::Brain *fittest = &population_[0].brain;
-		int fittestScore = scores_[0];
+		if (count < 2) // We don't need to do anything if there is only one or none elements
+			return;
 
-		int currentBucketIdx = 0;
+		// Quicksort
+		int pivotIndex = std::rand() % count;
 
-		for (unsigned char i = 0; i < populationSize_; i++)
+		// Partition
+		for (int i = 0; i < count; i++)
 		{
-			if (scores_[i] > fittestScore)
+			if (i < pivotIndex && data[indices[i]] > data[indices[pivotIndex]])
 			{
-				fittestScore = scores_[i];
-				fittest = &population_[i].brain;
+				unsigned char swap = indices[i];
+				indices[i] = indices[pivotIndex - 1];
+				indices[pivotIndex - 1] = indices[pivotIndex];
+				indices[pivotIndex] = swap;
+				pivotIndex--;
+				i--;
 			}
-
-			for (int fill = 0; fill < scores_[i]; fill++)
+			else
+			if (i > pivotIndex && data[indices[i]] < data[indices[pivotIndex]])
 			{
-				buckets_[currentBucketIdx++] = i;
+				unsigned char swap = indices[i];
+				indices[i] = indices[pivotIndex + 1];
+				indices[pivotIndex + 1] = indices[pivotIndex];
+				indices[pivotIndex] = swap;
+				pivotIndex++;
 			}
 		}
 
-		fittest_ = *fittest;
+		sortIndices(indices, data, pivotIndex);
+		sortIndices(indices + pivotIndex + 1, data + pivotIndex + 1,count - pivotIndex - 1);
+	}
+	void AiGeneticAlgorithm::reviewFitness()
+	{
+		unsigned char *sortedIndices = new unsigned char[populationSize_];
+		for (unsigned char i = 0; i < populationSize_; i++) 
+		{ 
+			sortedIndices[i] = i; 
+		}
+		sortIndices(sortedIndices, scores_, populationSize_);
+
+		int currentBucketIdx = 0;
+		for (unsigned char i = 0; i < populationSize_; i++)
+		{
+			unsigned char actualIndex = sortedIndices[populationSize_ - i - 1];
+			for (int fill = 0; fill < scores_[actualIndex]; fill++)
+			{
+				buckets_[currentBucketIdx++] = actualIndex;
+			}
+		}
+
+		fittest_ = population_[sortedIndices[populationSize_ - 1]].brain;
+		delete[] sortedIndices;
 	}
 	void AiGeneticAlgorithm::mate(const AiPlayer::BrainView &parentA, const AiPlayer::BrainView &parentB, AiPlayer::BrainView &outOffspring) const
 	{
@@ -222,24 +256,35 @@ namespace checkers
 		// Most fit is guaranteed to be in new generation unchanged
 		offSpring[0] = fittest_;
 
+		int survivedCount = (int)(totalFitnessScore_ * topPercent_);
+
 		// Create offspring
 		for (int i = 1; i < populationSize_; i++)
 		{
-			AiPlayer::BrainView *parentA;
-			unsigned char parentAIdx = buckets_[std::rand() % totalFitnessScore_]; // Weighted random
-			parentA = population_ + parentAIdx;
-
-			AiPlayer::BrainView *parentB;
-			unsigned char parentBIdx = buckets_[std::rand() % (totalFitnessScore_ - scores_[parentAIdx])]; // Weighted random but excluding parent A
-			if (parentBIdx == parentAIdx)
+			if (scores_[buckets_[0]] >= survivedCount)
 			{
-				// Can't have both parents be the same
-				parentBIdx += scores_[parentAIdx];
-				parentB = population_ + parentBIdx;
+				// If only one individual survived, the offspring is a clone
+				offSpring[i] = population_[buckets_[0]].brain;
 			}
-			parentB = population_ + parentBIdx;
+			else
+			{
+				AiPlayer::BrainView *parentA;
+				AiPlayer::BrainView *parentB;
 
-			mate(*parentA, *parentB, *reinterpret_cast<AiPlayer::BrainView*>(offSpring+i));
+				unsigned char parentAIdx = buckets_[std::rand() % survivedCount]; // Weighted random
+				parentA = population_ + parentAIdx;
+
+				unsigned char parentBIdx = buckets_[std::rand() % (survivedCount - scores_[parentAIdx])]; // Weighted random but excluding parent A
+				if (parentBIdx == parentAIdx)
+				{
+					// Can't have both parents be the same
+					parentBIdx += scores_[parentAIdx];
+					parentB = population_ + parentBIdx;
+				}
+				parentB = population_ + parentBIdx;
+
+				mate(*parentA, *parentB, *reinterpret_cast<AiPlayer::BrainView*>(offSpring + i));
+			}
 		}
 
 		// Fill new generation
@@ -250,7 +295,7 @@ namespace checkers
 
 		delete[] offSpring;
 	}
-	void AiGeneticAlgorithm::normalize(AiPlayer::BrainView & brain, double magnitude)
+	void AiGeneticAlgorithm::normalize(AiPlayer::BrainView & brain, double magnitude) const
 	{
 		double total = 0;
 		for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
@@ -272,7 +317,7 @@ namespace checkers
 	{
 		for (int brainIdx = 1; brainIdx < populationSize_; brainIdx++)
 		{
-			double randomStrength = (maxRandomPerGeneration_ * brainIdx) / populationSize_;
+			double randomStrength = (maxRandomPerGeneration_ * brainIdx) / (populationSize_-1);
 
 			for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
 			{
@@ -297,11 +342,12 @@ namespace checkers
 		}
 		recordFile_ << std::endl;
 	}
-	void AiGeneticAlgorithm::initialize(unsigned char populationSizePow2, double maxRandom, int aiRecurseLevels, const char * path)
+	void AiGeneticAlgorithm::initialize(unsigned char populationSizePow2, int aiRecurseLevels, double maxRandomPerGeneration, double topPercent, const char * outputCsvPath)
 	{
 		populationSize_ = 1 << populationSizePow2;
-		maxRandomPerGeneration_ = maxRandom;
+		maxRandomPerGeneration_ = maxRandomPerGeneration;
 		aiRecurseLevels_ = aiRecurseLevels;
+		topPercent_ = topPercent;
 
 		// Currently there are log 2 rounds played. Each brain plays once per round which means population/2 matches and 4 points are awarded each match
 		totalFitnessScore_ = populationSizePow2 * populationSize_ * 2;
@@ -310,7 +356,7 @@ namespace checkers
 		population_ = reinterpret_cast<AiPlayer::BrainView*>(new AiPlayer::Brain[populationSize_]);
 		numberOfInstances_ = (unsigned char)std::thread::hardware_concurrency();
 		instances_ = new std::thread[numberOfInstances_];
-		scores_ = new std::atomic<unsigned char>[populationSize_];
+		scores_ = new unsigned char[populationSize_];
 		buckets_ = new unsigned char[totalFitnessScore_];
 
 		// Seed random with current time
@@ -324,9 +370,9 @@ namespace checkers
 		fittest_ = population_[0].brain;
 
 		// Opens file for writing
-		if (path)
+		if (outputCsvPath)
 		{
-			recordFile_.open(path);
+			recordFile_.open(outputCsvPath);
 			if (recordFile_)
 			{
 				for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)

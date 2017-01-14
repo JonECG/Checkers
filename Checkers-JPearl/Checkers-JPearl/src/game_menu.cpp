@@ -115,7 +115,8 @@ namespace checkers
 				{
 					int testAiLevel = promptAiLevel("Enter the difficulty level for the AI to be trained on");
 					AiGeneticAlgorithm trainer = AiGeneticAlgorithm();
-					trainer.initialize(4, 0.1, testAiLevel, "./fittestByGeneration.csv");
+					trainer.initialize(5, testAiLevel, 0.01, 0.25, "./fittestByGeneration.csv");
+					trainer.randomize();
 					for (int i = 0; i < 10; i++)
 					{
 						trainer.processGeneration();
