@@ -16,6 +16,8 @@ namespace checkers
 		struct Brain
 		{
 			static const int kNumWeights = 9;
+			static const char * const kWeightNames[kNumWeights]; // Did someone say const?
+
 			// Valuing pieces
 			double pointsForMenAtHomeRow = 1;
 			double pointsForMenAtKingRow = 1.1;

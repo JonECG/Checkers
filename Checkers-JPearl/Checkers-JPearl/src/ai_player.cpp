@@ -8,6 +8,17 @@
 namespace checkers
 {
 	const AiPlayer::Brain AiPlayer::kDefaultBrain = AiPlayer::Brain();
+	const char * const AiPlayer::Brain::kWeightNames[] = {
+		"Points For Men At Home Row",
+		"Points For Men At King Row",
+		"Points For Kings",
+		"Points For Move Available",
+		"Points For Piece In Center",
+		"Points Per Adjacent Ally",
+		"Points Per Adjacent Boundary",
+		"Points Per Adjacent Opponent",
+		"Points Per Adjacent Empty Space",
+	};
 
 	AiPlayer::AiPlayer(int recurseLevels, Brain brain)
 	{
@@ -241,16 +252,17 @@ namespace checkers
 
 	std::ostream & operator<<(std::ostream & stream, const AiPlayer::Brain & brain)
 	{
-		return stream << "\n_____Brain values_____\n" <<
-			"pointsForMenAtHomeRow : " << brain.pointsForMenAtHomeRow << "\n" <<
-			"pointsForMenAtKingRow : " << brain.pointsForMenAtKingRow << "\n" <<
-			"pointsForKing : " << brain.pointsForKing << "\n" <<
-			"pointsForMoveAvailable : " << brain.pointsForMoveAvailable << "\n" <<
-			"pointsForPieceInCenter : " << brain.pointsForPieceInCenter << "\n" <<
-			"pointsPerAdjacentAlly : " << brain.pointsPerAdjacentAlly << "\n" <<
-			"pointsPerAdjacentBoundary : " << brain.pointsPerAdjacentBoundary << "\n" <<
-			"pointsPerAdjacentOpponent : " << brain.pointsPerAdjacentOpponent << "\n" <<
-			"pointsPerAdjacentEmptySpace : " << brain.pointsPerAdjacentEmptySpace << "\n" <<
-			std::endl;
+		stream << "\n_____Brain values_____\n";
+
+		const AiPlayer::BrainView *view = reinterpret_cast<const AiPlayer::BrainView*>(&brain);
+
+		for (int i = 0; i < AiPlayer::Brain::kNumWeights; i++)
+		{
+			stream << AiPlayer::Brain::kWeightNames[i] << " : " << view->raw[i] << '\n';
+		}
+
+		stream << std::endl;
+
+		return stream;
 	}
 }

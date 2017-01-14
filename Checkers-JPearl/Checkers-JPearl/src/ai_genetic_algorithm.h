@@ -4,6 +4,7 @@
 
 #include <thread>
 #include <atomic>
+#include <fstream>
 
 #include "ai_player.h"
 
@@ -27,6 +28,7 @@ namespace checkers
 		// An array to represent weighted random for fast indexing during offspring
 		unsigned char *buckets_;
 
+		std::ofstream recordFile_;
 		AiPlayer::Brain fittest_;
 
 		// Zeroes out scores from last calculateFitness()
@@ -41,20 +43,19 @@ namespace checkers
 		void produceOffspring();
 		// Mutates all members of the generation other than the fittest in varying degrees of randomness
 		void mutate();
-
 		// Writes fittest to end of file in csv
-		void recordFittest(const char * path);
+		void recordFittest();
 
 	public:
-		// Initializes the GA with the given population size and the limit of randomness that can occur each generation 
-		void initialize(unsigned char populationSize, double maxRandomPerGeneration, int aiRecurseLevels);
+		// Initializes the GA with the given population size and the limit of randomness that can occur each generation. If given a path, will append to it in csv with the fittest brain's values creating a new file if it doesn't exist
+		void initialize(unsigned char populationSize, double maxRandomPerGeneration, int aiRecurseLevels, const char * outputCsvPath = nullptr);
 		void release();
 
 		// Randomizes all of the current generation in the range of -maxRandom to +maxRandom
 		void randomize(double maxRandom);
 
-		// Processes a new generation. Get the fittest afterwards with getFittest(). If given a path, will append to it in csv with the fittest brain's values creating a new file if it doesn't exist
-		void processGeneration( const char * outputCsvPath = nullptr );
+		// Processes a new generation. Get the fittest afterwards with getFittest(). 
+		void processGeneration();
 
 		// Returns a pointer to the current fittest as evaluated by the previous generation
 		AiPlayer::Brain getFittest() const;

@@ -214,22 +214,20 @@ namespace checkers
 			}
 		}
 	}
-	void AiGeneticAlgorithm::recordFittest(const char * path)
+	void AiGeneticAlgorithm::recordFittest()
 	{
-		std::ofstream recordFile;
+		if (!recordFile_)
+			return;
 
-		recordFile.open(path, std::ios_base::app);
 		for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
 		{
-			recordFile << reinterpret_cast<AiPlayer::BrainView*>(&fittest_)->raw[weightIdx];
+			recordFile_ << reinterpret_cast<AiPlayer::BrainView*>(&fittest_)->raw[weightIdx];
 			if (weightIdx != AiPlayer::Brain::kNumWeights - 1)
-				recordFile << ',';
+				recordFile_ << ',';
 		}
-		recordFile << std::endl;
-
-		recordFile.close();
+		recordFile_ << std::endl;
 	}
-	void AiGeneticAlgorithm::initialize(unsigned char populationSize, double maxRandom, int aiRecurseLevels )
+	void AiGeneticAlgorithm::initialize(unsigned char populationSize, double maxRandom, int aiRecurseLevels, const char * path)
 	{
 		populationSize_ = populationSize;
 		maxRandomPerGeneration_ = maxRandom;
@@ -255,10 +253,28 @@ namespace checkers
 		}
 		mutate();
 		fittest_ = population_[0].brain;
+
+		// Opens file for writing
+		if (path)
+		{
+			recordFile_.open(path);
+			if (recordFile_)
+			{
+				for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
+				{
+					recordFile_ << AiPlayer::Brain::kWeightNames[weightIdx];
+					if (weightIdx != AiPlayer::Brain::kNumWeights - 1)
+						recordFile_ << ',';
+				}
+				recordFile_ << std::endl;
+			}
+		}
 	}
 
 	void AiGeneticAlgorithm::release()
 	{
+		recordFile_.close();
+
 		// Deallocate arrays
 		delete[] population_;
 		delete[] instances_;
@@ -280,16 +296,14 @@ namespace checkers
 		}
 	}
 
-	void AiGeneticAlgorithm::processGeneration(const char * outputCsvPath)
+	void AiGeneticAlgorithm::processGeneration()
 	{
 		resetScores();
 		calculateFitness();
 		reviewFitness();
 		produceOffspring();
 		mutate();
-		
-		if (outputCsvPath)
-			recordFittest(outputCsvPath);
+		recordFittest();
 	}
 
 	AiPlayer::Brain AiGeneticAlgorithm::getFittest() const
