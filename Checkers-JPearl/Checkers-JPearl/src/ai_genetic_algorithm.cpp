@@ -209,8 +209,7 @@ namespace checkers
 	}
 	void AiGeneticAlgorithm::mate(const AiPlayer::BrainView &parentA, const AiPlayer::BrainView &parentB, AiPlayer::BrainView &outOffspring) const
 	{
-		// We don't ever mutate the first weight -- we keep it at one in order to have it as a constant reference
-		for (int weightIdx = 1; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
+		for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
 		{
 			// Randomly choose which parent to take trait
 			outOffspring.raw[weightIdx] = (std::rand() & 1) ? parentA.raw[weightIdx] : parentB.raw[weightIdx];
@@ -251,19 +250,37 @@ namespace checkers
 
 		delete[] offSpring;
 	}
+	void AiGeneticAlgorithm::normalize(AiPlayer::BrainView & brain, double magnitude)
+	{
+		double total = 0;
+		for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
+		{
+			total += std::abs(brain.raw[weightIdx]);
+		}
+		double average = total / AiPlayer::Brain::kNumWeights;
+
+		if (average == 0)
+			return;
+
+		double scale = magnitude / average;
+		for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
+		{
+			brain.raw[weightIdx] *= scale;
+		}
+	}
 	void AiGeneticAlgorithm::mutate()
 	{
 		for (int brainIdx = 1; brainIdx < populationSize_; brainIdx++)
 		{
 			double randomStrength = (maxRandomPerGeneration_ * brainIdx) / populationSize_;
 
-			// We don't ever mutate the first weight -- we keep it at one in order to have it as a constant reference
-			for (int weightIdx = 1; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
+			for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
 			{
 				double fraction = std::rand() / (double)RAND_MAX;
 				fraction = randomStrength * (fraction * 2 - 1);
 				population_[brainIdx].raw[weightIdx] += fraction;
 			}
+			normalize(population_[brainIdx]);
 		}
 	}
 	void AiGeneticAlgorithm::recordFittest()
@@ -271,9 +288,10 @@ namespace checkers
 		if (!recordFile_)
 			return;
 
+		AiPlayer::BrainView* view = reinterpret_cast<AiPlayer::BrainView*>(&fittest_);
 		for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
 		{
-			recordFile_ << reinterpret_cast<AiPlayer::BrainView*>(&fittest_)->raw[weightIdx];
+			recordFile_ << view->raw[weightIdx];
 			if (weightIdx != AiPlayer::Brain::kNumWeights - 1)
 				recordFile_ << ',';
 		}
@@ -303,7 +321,6 @@ namespace checkers
 		{
 			population_[i].brain = AiPlayer::kDefaultBrain;
 		}
-		mutate();
 		fittest_ = population_[0].brain;
 
 		// Opens file for writing
@@ -334,27 +351,27 @@ namespace checkers
 		delete[] buckets_;
 	}
 
-	void AiGeneticAlgorithm::randomize(double maxRandom)
+	void AiGeneticAlgorithm::randomize()
 	{
 		for (int brainIdx = 0; brainIdx < populationSize_; brainIdx++)
 		{
-			// We don't ever mutate the first weight -- we keep it at one in order to have it as a constant reference
-			for (int weightIdx = 1; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
+			for (int weightIdx = 0; weightIdx < AiPlayer::Brain::kNumWeights; weightIdx++)
 			{
 				double fraction = std::rand() / (double)RAND_MAX;
-				fraction = maxRandom * (fraction * 2 - 1);
+				fraction = (fraction * 2 - 1);
 				population_[brainIdx].raw[weightIdx] = fraction;
 			}
+			normalize(population_[brainIdx]);
 		}
 	}
 
 	void AiGeneticAlgorithm::processGeneration()
 	{
+		mutate();
 		resetScores();
 		calculateFitness();
 		reviewFitness();
 		produceOffspring();
-		mutate();
 		recordFittest();
 	}
 

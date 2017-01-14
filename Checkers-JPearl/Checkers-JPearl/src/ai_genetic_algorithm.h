@@ -41,6 +41,8 @@ namespace checkers
 		void mate(const AiPlayer::BrainView &parentA, const AiPlayer::BrainView &parentB, AiPlayer::BrainView &outOffspring) const;
 		// Creates a new generation by splicing pairs based on the fitness of previous one and will always keep a copy of the best performing individual unchanged
 		void produceOffspring();
+		// Multiplicatively normalizes the brain values so that they are on the same average magnitude
+		void normalize(AiPlayer::BrainView &brain, double magnitude = 1);
 		// Mutates all members of the generation other than the fittest in varying degrees of randomness
 		void mutate();
 		// Writes fittest to end of file in csv
@@ -52,7 +54,7 @@ namespace checkers
 		void release();
 
 		// Randomizes all of the current generation in the range of -maxRandom to +maxRandom
-		void randomize(double maxRandom);
+		void randomize();
 
 		// Processes a new generation. Get the fittest afterwards with getFittest(). 
 		void processGeneration();
