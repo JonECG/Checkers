@@ -114,7 +114,7 @@ namespace checkers
 				case '6':
 				{
 					AiGeneticAlgorithm trainer = AiGeneticAlgorithm();
-					trainer.initialize(15, 0.1, 5, "./fittestByGeneration.csv");
+					trainer.initialize(4, 0.1, 5, "./fittestByGeneration.csv");
 					trainer.randomize(10);
 					for (int i = 0; i < 100; i++)
 					{

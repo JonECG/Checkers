@@ -34,109 +34,155 @@ namespace checkers
 		const int barWidth = 50;
 		const char progressBarBackground = (unsigned char)176;
 		const char progressBarForeground = (unsigned char)178;
+		std::mutex progressLock;
 		for (int i = 0; i < barWidth; i++)
 			std::cout << progressBarBackground;
 		std::cout << '\r' << std::flush;
 		int currentProgressPoint = 0;
 
-		for (unsigned char brainAIdx = 0; brainAIdx < populationSize_; brainAIdx++)
+
+		// Set up the brackets
+		unsigned char *brackets = new unsigned char[populationSize_];
+		unsigned char *bracketsBackbuffer = new unsigned char[populationSize_];
+		for (unsigned char i = 0; i < populationSize_; i++)
 		{
-			for (unsigned char brainBIdx = 0; brainBIdx < populationSize_; brainBIdx++)
+			brackets[i] = i;
+		}
+
+		unsigned char roundSize = populationSize_;
+
+		while (roundSize > 1)
+		{
+			// Divide the round size in half
+			unsigned char roundHalfSize = roundSize >> 1;
+
+			for (unsigned char roundStartIndex = 0; roundStartIndex < populationSize_; roundStartIndex += roundSize)
 			{
-				if (brainAIdx == brainBIdx)
-					continue; // We can't have the same brain fight itself
+				unsigned char currentWinnerIndex = 0;
+				unsigned char currentLoserIndex = roundHalfSize;
 
-				// Wait until a thread is available
-				unsigned char availableThread = numberOfInstances_;
-				while (availableThread == numberOfInstances_)
+				for (unsigned char currentMatch = 0; currentMatch < roundHalfSize; currentMatch++)
 				{
-					poolLock.lock();
-					unsigned char firstClosedSpot = (freeThreadIndicesEnd + 1) % numberOfInstances_;
-					if (freeThreadIndicesStart != firstClosedSpot)
-					{
-						availableThread = freeThreadIndices[freeThreadIndicesEnd];
-						freeThreadIndicesEnd = firstClosedSpot;
-					}
-					poolLock.unlock();
-					std::this_thread::yield();
-				}
+					unsigned char brainAIdx = brackets[roundStartIndex + currentMatch * 2];
+					unsigned char brainBIdx = brackets[roundStartIndex + currentMatch * 2 + 1];
 
-				
 
-				// Make sure it's finished
-				if (instances_[availableThread].joinable())
-					instances_[availableThread].join();
-
-				// Spin off a new thread simulating the game
-				instances_[availableThread] = std::thread([this, availableThread, &numFinishedGames, &poolLock, brainAIdx, brainBIdx, freeThreadIndices, &freeThreadIndicesStart, &freeThreadIndicesEnd] {
-					Game game = Game();
-					game.registerPlayer(new AiPlayer(aiRecurseLevels_, population_[brainAIdx].brain), PieceSide::O);
-					game.registerPlayer(new AiPlayer(aiRecurseLevels_, population_[brainBIdx].brain), PieceSide::X);
-					game.initialize();
-					game.startGame();
-					while (game.playTurn())
-					{
-						std::this_thread::yield();
-					}
-					int winner = game.getWinner();
-					switch(winner)
-					{
-					case PieceSide::O + 1:
-						scores_[brainAIdx].fetch_add(2);
-						break;
-					case PieceSide::X + 1:
-						scores_[brainBIdx].fetch_add(2);
-						break;
-					default:
-						scores_[brainAIdx].fetch_add(1);
-						scores_[brainBIdx].fetch_add(1);
-					}
-					game.release();
-
-					// Mark this thread as available again
-					bool freedInstance = false;
-					while (!freedInstance)
+					// Wait until a thread is available
+					unsigned char availableThread = numberOfInstances_;
+					while (availableThread == numberOfInstances_)
 					{
 						poolLock.lock();
-						if (freeThreadIndicesStart != freeThreadIndicesEnd)
+						unsigned char firstClosedSpot = (freeThreadIndicesEnd + 1) % numberOfInstances_;
+						if (freeThreadIndicesStart != firstClosedSpot)
 						{
-							freeThreadIndices[freeThreadIndicesStart] = availableThread;
-							freeThreadIndicesStart = (freeThreadIndicesStart + 1) % numberOfInstances_;
-							numFinishedGames++;
-							freedInstance = true;
+							availableThread = freeThreadIndices[freeThreadIndicesEnd];
+							freeThreadIndicesEnd = firstClosedSpot;
 						}
 						poolLock.unlock();
 						std::this_thread::yield();
 					}
-				});
 
-				
-				while ( barWidth * numFinishedGames / ((double)populationSize_*(populationSize_ - 1)) > currentProgressPoint )
-				{
-					std::cout << progressBarForeground << std::flush;
-					currentProgressPoint++;
+					// Make sure it's finished
+					if (instances_[availableThread].joinable())
+						instances_[availableThread].join();
+
+					// Spin off a new thread simulating the game
+					instances_[availableThread] = std::thread([this, &numFinishedGames, brainAIdx, brainBIdx, bracketsBackbuffer, currentWinnerIndex, currentLoserIndex, &progressLock, progressBarForeground,
+																barWidth, &currentProgressPoint, availableThread, &poolLock, freeThreadIndices, &freeThreadIndicesStart, &freeThreadIndicesEnd ] {
+						Game game = Game();
+						unsigned char aScore = 0;
+						unsigned char bScore = 0;
+						for (int i = 0; i < 2; i++)
+						{
+							unsigned char useBrainO = i == 0 ? brainAIdx : brainBIdx;
+							unsigned char useBrainX = i == 0 ? brainBIdx : brainAIdx;
+							unsigned char &useScoreO = i == 0 ? aScore : bScore;
+							unsigned char &useScoreX = i == 0 ? bScore : aScore;
+
+							game.registerPlayer(new AiPlayer(aiRecurseLevels_, population_[useBrainO].brain), PieceSide::O);
+							game.registerPlayer(new AiPlayer(aiRecurseLevels_, population_[useBrainX].brain), PieceSide::X);
+							game.initialize();
+							game.startGame();
+							while (game.playTurn())
+							{
+								std::this_thread::yield();
+							}
+							int winner = game.getWinner();
+							switch (winner)
+							{
+							case PieceSide::O + 1:
+								useScoreO += 2;
+								break;
+							case PieceSide::X + 1:
+								useScoreX += 2;
+								break;
+							default:
+								useScoreO += 1;
+								useScoreX += 1;
+							}
+							game.release();
+						}
+
+						scores_[brainAIdx].fetch_add(aScore);
+						scores_[brainBIdx].fetch_add(bScore);
+
+						bracketsBackbuffer[currentWinnerIndex] = aScore >= bScore ? brainAIdx : brainBIdx;
+						bracketsBackbuffer[currentLoserIndex] = aScore >= bScore ? brainBIdx : brainAIdx;
+
+						progressLock.lock();
+						while ((barWidth+1) * numFinishedGames / (totalFitnessScore_ / 4.0) > currentProgressPoint)
+						{
+							std::cout << progressBarForeground << std::flush;
+							currentProgressPoint++;
+						}
+						progressLock.unlock();
+
+						// Mark this thread as available again
+						bool freedInstance = false;
+						while (!freedInstance)
+						{
+							poolLock.lock();
+							if (freeThreadIndicesStart != freeThreadIndicesEnd)
+							{
+								freeThreadIndices[freeThreadIndicesStart] = availableThread;
+								freeThreadIndicesStart = (freeThreadIndicesStart + 1) % numberOfInstances_;
+								numFinishedGames++;
+								freedInstance = true;
+							}
+							poolLock.unlock();
+							std::this_thread::yield();
+						}
+					});
+
+
+					currentWinnerIndex++;
+					currentLoserIndex++;
 				}
-				
 			}
-		}
 
 
-		// Wait for the results for the rest of the batch
-		for(unsigned char i = 0; i < numberOfInstances_; i++)
-		{
-			if(instances_[i].joinable())
-				instances_[i].join();
-
-			while (barWidth * numFinishedGames / ((double)populationSize_*(populationSize_-1)) > currentProgressPoint)
+			// Wait for the results for the rest of the batch
+			for (unsigned char i = 0; i < numberOfInstances_; i++)
 			{
-				std::cout << progressBarForeground << std::flush;
-				currentProgressPoint++;
+				if (instances_[i].joinable())
+					instances_[i].join();
 			}
+
+
+			// Buffer swap
+			unsigned char * swap = brackets;
+			brackets = bracketsBackbuffer;
+			bracketsBackbuffer = swap;
+
+			// Play through winner's tier and loser's tier next time
+			roundSize = roundHalfSize;
 		}
 
 		std::cout << std::endl;
 
 		delete[] freeThreadIndices;
+		delete[] brackets;
+		delete[] bracketsBackbuffer;
 	}
 	void AiGeneticAlgorithm::reviewFitness()
 	{
@@ -233,14 +279,14 @@ namespace checkers
 		}
 		recordFile_ << std::endl;
 	}
-	void AiGeneticAlgorithm::initialize(unsigned char populationSize, double maxRandom, int aiRecurseLevels, const char * path)
+	void AiGeneticAlgorithm::initialize(unsigned char populationSizePow2, double maxRandom, int aiRecurseLevels, const char * path)
 	{
-		populationSize_ = populationSize;
+		populationSize_ = 1 << populationSizePow2;
 		maxRandomPerGeneration_ = maxRandom;
 		aiRecurseLevels_ = aiRecurseLevels;
 
-		// Round Robin 1 point per win, but each pair plays two games so each side has a chance of going first as O and there are two points awarded per game
-		totalFitnessScore_ = populationSize_ * (populationSize_ - 1) * 2;
+		// Currently there are log 2 rounds played. Each brain plays once per round which means population/2 matches and 4 points are awarded each match
+		totalFitnessScore_ = populationSizePow2 * populationSize_ * 2;
 
 		// Allocate arrays
 		population_ = reinterpret_cast<AiPlayer::BrainView*>(new AiPlayer::Brain[populationSize_]);

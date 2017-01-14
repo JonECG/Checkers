@@ -47,8 +47,8 @@ namespace checkers
 		void recordFittest();
 
 	public:
-		// Initializes the GA with the given population size and the limit of randomness that can occur each generation. If given a path, will append to it in csv with the fittest brain's values creating a new file if it doesn't exist
-		void initialize(unsigned char populationSize, double maxRandomPerGeneration, int aiRecurseLevels, const char * outputCsvPath = nullptr);
+		// Initializes the GA with the given population size (raise 2 to the given power) and the limit of randomness that can occur each generation. If given a path, will append to it in csv with the fittest brain's values creating a new file if it doesn't exist
+		void initialize(unsigned char populationSizePow2, double maxRandomPerGeneration, int aiRecurseLevels, const char * outputCsvPath = nullptr);
 		void release();
 
 		// Randomizes all of the current generation in the range of -maxRandom to +maxRandom

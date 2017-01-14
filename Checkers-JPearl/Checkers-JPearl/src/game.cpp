@@ -35,13 +35,18 @@ namespace checkers
 
 	void Game::release()
 	{
-		checkerBoard_->release();
-		delete checkerBoard_;
+		if (checkerBoard_)
+		{
+			checkerBoard_->release();
+			delete checkerBoard_;
+			checkerBoard_ = nullptr;
+		}
 
 		for (int i = 0; i < kNumPlayers; i++)
 		{
 			if (players_[i])
 				delete players_[i];
+			players_[i] = nullptr;
 		}
 	}
 
