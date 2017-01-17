@@ -12,9 +12,7 @@ namespace checkers
 {
 	class AiGeneticAlgorithm
 	{
-		unsigned char populationSize_;
-		unsigned char numberOfInstances_;
-		int totalFitnessScore_;
+		unsigned int populationSize_;
 
 		int aiRecurseLevels_;
 		double maxRandomPerGeneration_;
@@ -23,9 +21,11 @@ namespace checkers
 		// The current generation of brains
 		AiPlayer::BrainView *population_;
 		// The collections of scores for each brain
-		unsigned char *scores_;
+		float *scores_;
 		// An array to represent weighted random for fast indexing during offspring
-		unsigned char *buckets_;
+		unsigned int *sortedIndices_;
+		float *sortedCumulativeScores_;
+		float totalFitnessScore_;
 
 		std::ofstream recordFile_;
 		AiPlayer::Brain fittest_;
@@ -35,9 +35,12 @@ namespace checkers
 		// Scores the fitness of every individual in the population
 		void calculateFitness();
 		// Sorts the given indices in respect to the values in the given array (least to greatest)
-		void sortIndices(unsigned char *indices, unsigned const char *data, int count) const;
+		void sortIndices(unsigned int *indices, const float *data, int count) const;
 		// Reviews the fitness results from calculateFitness and populates the weighted buckets accordingly
 		void reviewFitness();
+		// Finds a parent at random weighted by scores
+		unsigned int findParent() const;
+		unsigned int findParent(unsigned int toExclude) const;
 		// Mates the two parents and outputs the resulting offspring in outOffspring
 		void mate(const AiPlayer::BrainView &parentA, const AiPlayer::BrainView &parentB, AiPlayer::BrainView &outOffspring) const;
 		// Creates a new generation by splicing pairs based on the fitness of previous one and will always keep a copy of the best performing individual unchanged
